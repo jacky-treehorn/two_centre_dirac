@@ -1,0 +1,3 @@
+	1.d-4,3.d2           !Size of box, min and max radius, denoted as rmin and rmax
+	50.d0                !include all states up to this energy, denoted as up_energy
+   1.0650268d-2,0.d0    !3.5d22  !Wavevnumber and amplitude of Laser field 2*pi/lambda, enter this in W/m^2

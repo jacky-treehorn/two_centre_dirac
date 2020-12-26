@@ -1,0 +1,17 @@
+      92.d0 5.47d0		!Z1 and RMS1
+      92.d0 5.47d0		!Z2 and RMS2, For nonhomonuclear case, Make Z2<Z1
+      0.5d0,0.5d0	   	!M <-- leave at 0.5d0, the other can be anything >= 0.5d0
+      0		         	!Charge distribution model
+      -250,250       	!Lower and upper Steps in the evolution of /xi
+      4.462d0 	      	!Range of /xi, if sudden=T \xi=maximum time
+      238.d0  	      	!Mass of projectile
+      238.d0	      	!Mass of target
+      6.518865d-2    	!Velocity/c of projectile
+      0.05d0           	!Impact Parameter
+      F             	!State range, if .true. user specifies range.
+      F   	         	!negative continuum on or off?
+      T   	         	!dkb basis on or off
+      T	            	!Input of start states manually
+      F	            	!Sudden approximation on or off
+      F	            	!Plot functions on/off	
+      T              	!Recoil on/off	

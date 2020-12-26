@@ -1,0 +1,25 @@
+       implicit real*8(a-h,o-z)
+
+       parameter (ns=8)
+c      order of B-splines
+
+       parameter (nugl=50)
+c      Number of different directions
+
+       parameter (nuz=64)
+c      order of integration for the first integral
+
+       parameter (npoints_vl=128)
+c      order of integration for the first integral in Uehling term
+
+       parameter (nuzue1=16)
+c      order of integration for the second integral in Uehling term
+
+       parameter (N_int=8)
+c      number of points for interpolation
+
+       parameter(c=137.03599911d0)		
+c      1/fine stucture constant
+
+       parameter(pi=3.1415926535897932385d0)	
+       parameter(erf_faktor=1.265969d0)
