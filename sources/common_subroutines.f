@@ -356,6 +356,31 @@ c
       RETURN
       END
 
+      function coeffMakerExplicit(d_m1,d_m2,k1,k2,ll)
+      implicit real*8 (a-h,o-z)
+      real*8 j_1,j_2,l_1,l_2,coeffMakerExplicit
+      call factor()
+
+      call DiracAngularl(dble(k1),l_1)
+      j_1=dabs(k1)-0.5d0
+      call DiracAngularl(dble(k2),l_2)
+      j_2=dabs(k2)-0.5d0
+
+      BigL=dble(ll)
+      coeffMakerExplicit=Clebsh(l_1,d_m1-0.5d0,0.5d0,0.5d0,j_1,d_m1)*
+     &Clebsh(l_2,d_m2-0.5d0,0.5d0,0.5d0,j_2,d_m2)*
+     &Clebsch(l_1,d_m1-0.5d0,BigL,0.d0,l2,d_m2-0.5d0)
+      coeffMakerExplicit=coeffMakerExplicit+
+     &Clebsh(l_1,d_m1+0.5d0,0.5d0,-0.5d0,j_1,d_m1)*
+     &Clebsh(l_2,d_m2+0.5d0,0.5d0,-0.5d0,j_2,d_m2)*
+     &Clebsch(l_1,d_m1+0.5d0,BigL,0.d0,l2,d_m2+0.5d0)
+      coeffMakerExplicit=coeffMakerExplicit*sqrt(2.d0*l_1+1.d0)/
+     &sqrt(2.d0*l_2+1.d0)
+      coeffMakerExplicit=coeffMakerExplicit*
+     &Clebsch(l_1,0.d0,BigL,0.d0,l_2)
+      if(dabs(coeffMakerExplicit).lt. 1.d-12)coeffMakerExplicit=0.d0
+      return
+      end function coeffMakerExplicit
 C****************************************************************
 C*************Added on the 110810, necessary for the angular part of the
 C  matrix element shown below
@@ -1250,18 +1275,19 @@ c end
       end
 
       subroutine MatrixMM_Storage_DKB_2(wave_new,nm,nkap,nstates,lstep,
-     &dvdRmatdkb2,dvdRmatdkb1,wavesum_l2,wavesum_s2,k1,i_state,k2)
+     &dvdRmatdkb2,dvdRmatdkb1,wavesum_l2,wavesum_s2,k1,i_state,k2,
+     &d_m1,d_m2)
       include 'inc.par'
       real*8 wave_new(nstates,2*nm,-nkap:nkap),wavesum_l2(nm,0:2*nkap),
      &wavesum_s2(nm,0:2*nkap),dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
      &dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2)
-      common /momentum_projection/ amu,amj_max
 
       wavesum_l2=0.d0
       wavesum_s2=0.d0
 
       do ll=0,2*nkap,lstep
-        ang_comp_l=coeff_maker(amu,1.d0*k1,1.d0*k2,ll)
+!        ang_comp_l=coeff_maker(amu,1.d0*k1,1.d0*k2,ll)
+        ang_comp_l=coeffMakerExplicit(d_m1,d_m2,k1,k2,ll)
         if(ang_comp_l.ne.0.d0)then
           do i=1,nm
             do j1=max(1,i-ns+1),min(i+ns-1,nm)
@@ -1275,7 +1301,8 @@ c end
       enddo
 
       do ll=0,2*nkap,lstep
-        ang_comp_s=coeff_maker(amu,-1.d0*k1,-1.d0*k2,ll)
+!        ang_comp_s=coeff_maker(amu,-1.d0*k1,-1.d0*k2,ll)
+        ang_comp_s=coeffMakerExplicit(d_m1,d_m2,-k1,-k2,ll)
         if(ang_comp_s.ne.0.d0)then
           do i=1,nm
             do j1=max(1,i-ns+1),min(i+ns-1,nm)
@@ -1855,7 +1882,7 @@ c          endif
 
       subroutine unrolling_nondkb_1(
      &wavesum_lge1,wave_new,wavesum_sml1,
-     &nkap,nm,nstates,lstep,unroll,k1,k2,j_state)
+     &nkap,nm,nstates,lstep,unroll,k1,k2,j_state,d_m1,d_m2)
       include 'inc.par'
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(nm,0:2*nkap),wavesum_sml1(nm,0:2*nkap),
@@ -1865,7 +1892,8 @@ c          endif
 
       unroll=0.d0
       do ll=0,2*nkap,lstep
-        ang_comp_l=coeff_maker(amu,1.d0*k1,1.d0*k2,ll)
+      ! ang_comp_l=coeff_maker(amu,1.d0*k1,1.d0*k2,ll)
+        ang_comp_l=coeffMakerExplicit(d_m1,d_m2,k1,k2,ll)
         if(ang_comp_l.ne.0.d0)then
           do i=1,nm
             unroll(ll,1)=unroll(ll,1)+wavesum_lge1(i,ll)*
@@ -1876,7 +1904,8 @@ c          endif
       enddo
 
       do ll=0,2*nkap,lstep
-        ang_comp_s=coeff_maker(amu,-1.d0*k1,-1.d0*k2,ll)
+!        ang_comp_s=coeff_maker(amu,-1.d0*k1,-1.d0*k2,ll)
+        ang_comp_s=coeffMakerExplicit(d_m1,d_m2,-k1,-k2,ll)
         if(ang_comp_s.ne.0.d0)then
           do i=1,nm
             unroll(ll,2)=unroll(ll,2)+wavesum_sml1(i,ll)*
@@ -2370,17 +2399,17 @@ c      endif
 
       subroutine unrolling_dkb(wavesum_lge1,wavesum_lge2,wave_new,
      &wavesum_sml1,wavesum_sml2,nkap,nm,nstates,lstep,unroll,k1,
-     &k2,j_state)
+     &k2,j_state,d_m1,d_m2)
       include 'inc.par'
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(nm,0:2*nkap),wavesum_lge2(nm,0:2*nkap),
      &wavesum_sml1(nm,0:2*nkap),wavesum_sml2(nm,0:2*nkap),
      &unroll(0:2*nkap,2)
-      common /momentum_projection/ amu,amj_max
 
       unroll=0.d0
       do ll=0,2*nkap,lstep
-        ang_comp_l=coeff_maker(amu,1.d0*k1,1.d0*k2,ll)
+!        ang_comp_l=coeff_maker(amu,1.d0*k1,1.d0*k2,ll)
+        ang_comp_l=coeffMakerExplicit(d_m1,d_m2,k1,k2,ll)
         if(ang_comp_l.ne.0.d0)then
           do i=1,nm
             unroll(ll,1)=unroll(ll,1)+
@@ -2392,7 +2421,8 @@ c      endif
       enddo
 
       do ll=0,2*nkap,lstep
-        ang_comp_s=coeff_maker(amu,-1.d0*k1,-1.d0*k2,ll)
+!        ang_comp_s=coeff_maker(amu,-1.d0*k1,-1.d0*k2,ll)
+        ang_comp_l=coeffMakerExplicit(d_m1,d_m2,-k1,-k2,ll)
         if(ang_comp_s.ne.0.d0)then
           do i=1,nm
             unroll(ll,2)=unroll(ll,2)+
@@ -2802,24 +2832,27 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       end
 
       subroutine MatrixMMGenerator_neqZ(dTdXi,dRdXi,eigval,nkap,vmat,
-     &wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2)
+     &wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
+     &d_number_states_mj)
       include 'inc.par'
       real*8, dimension(:,:),allocatable:: wavesum_lge1,wavesum_sml1,
      &unroll,wavesum_lge2,wavesum_sml2
       real*8 eigval(nstates),vmat(nm,nm,0:2*nkap,nvmat),
      &wave_new(nstates,2*nm,-nkap:nkap),
      &dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
-     &dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2)
+     &dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
+     &d_number_states_mj(n_states)
       complex*16 mm(nstates,nstates)
       common /common_dkb/ dkb
-      common /momentum_projection/ amu,amj_max
       logical dkb
 
       mm=(0.d0,0.d0)
 
       if(dkb) then
          do i=1,nstates
+            d_m1=d_number_states_mj(i)
             do j=i+1,nstates
+               d_m2=d_number_states_mj(j)
                do ki=-nkap,nkap
                   if(ki.ne.0)then
                      allocate(wavesum_lge1(nm,0:2*nkap))
@@ -2833,11 +2866,11 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                            allocate(wavesum_sml2(nm,0:2*nkap))
                            call MatrixMM_Storage_DKB_2(wave_new,nm,nkap,
      &                     nstates,1,dvdRmatdkb2,dvdRmatdkb1,
-     &                     wavesum_lge2,wavesum_sml2,ki,i,kj)
+     &                     wavesum_lge2,wavesum_sml2,ki,i,kj,d_m1,d_m2)
                            allocate(unroll(0:2*nkap,2))
                            call unrolling_dkb(wavesum_lge1,wavesum_lge2,
      &                     wave_new,wavesum_sml1,wavesum_sml2,nkap,nm,
-     &                     nstates,1,unroll,ki,kj,j)
+     &                     nstates,1,unroll,ki,kj,j,d_m1,d_m2)
                            do l=0,2*nkap
                               mm(i,j)=mm(i,j)+unroll(l,1)+
      &                        unroll(l,2)
@@ -2861,7 +2894,9 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
          enddo
       else
          do i=1,nstates
+            d_m1=d_number_states_mj(i)
             do j=i+1,nstates
+               d_m2=d_number_states_mj(j)
                do ki=-nkap,nkap
                   if(ki.ne.0)then
                      allocate(wavesum_lge1(nm,0:2*nkap))
@@ -2873,7 +2908,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                            allocate(unroll(0:2*nkap,2))
                            call unrolling_nondkb_1(wavesum_lge1,wave_new
      &                     ,wavesum_sml1,nkap,nm,nstates,1,unroll,ki,kj,
-     &                     j)
+     &                     j,d_m1,d_m2)
                            do l=0,2*nkap
                               mm(i,j)=mm(i,j)+unroll(l,1)+
      &                        unroll(l,2)
@@ -2901,24 +2936,27 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       end
 
       subroutine MatrixMMGenerator_eqZeven(dTdXi,dRdXi,eigval,nkap,vmat,
-     &wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2)
+     &wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
+     &d_number_states_mj)
       include 'inc.par'
       real*8, dimension(:,:),allocatable:: wavesum_lge1,wavesum_sml1,
      &unroll,wavesum_lge2,wavesum_sml2
       real*8 eigval(nstates),vmat(nm,nm,0:2*nkap,nvmat),
      &wave_new(nstates,2*nm,-nkap:nkap),
      &dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
-     &dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2)
+     &dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
+     &d_number_states_mj(nstates)
       complex*16 mm(nstates,nstates)
       common /common_dkb/ dkb
-      common /momentum_projection/ amu,amj_max
       logical dkb
 
       mm=(0.d0,0.d0)
 
       if(dkb) then
         do i=1,nstates
+          d_m1=d_number_states_mj(i)
           do j=i+1,nstates
+            d_m2=d_number_states_mj(j)
             k1factor=(-1)**nkap
             do k1=nkap,1,-1
               ki=k1factor*k1
@@ -2935,11 +2973,11 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                 allocate(wavesum_sml2(nm,0:2*nkap))
                 call MatrixMM_Storage_DKB_2(wave_new,nm,nkap,
      &          nstates,2,dvdRmatdkb2,dvdRmatdkb1,wavesum_lge2,
-     &          wavesum_sml2,ki,i,kj)
+     &          wavesum_sml2,ki,i,kj,d_m1,d_m2)
                 allocate(unroll(0:2*nkap,2))
                 call unrolling_dkb(wavesum_lge1,wavesum_lge2,
      &          wave_new,wavesum_sml1,wavesum_sml2,nkap,nm,
-     &          nstates,2,unroll,ki,kj,j)
+     &          nstates,2,unroll,ki,kj,j,d_m1,d_m2)
                 do l=0,2*nkap,2
                   mm(i,j)=mm(i,j)+unroll(l,1)+unroll(l,2)
                 enddo
@@ -2960,7 +2998,9 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
         enddo
       else
         do i=1,nstates
+          d_m1=d_number_states_mj(i)
           do j=i+1,nstates
+            d_m2=d_number_states_mj(j)
             k1factor=(-1)**nkap
             do k1=nkap,1,-1
               ki=k1*k1factor
@@ -2975,7 +3015,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                 k2factor=-k2factor
                 allocate(unroll(0:2*nkap,2))
                 call unrolling_nondkb_1(wavesum_lge1,wave_new,
-     &          wavesum_sml1,nkap,nm,nstates,2,unroll,ki,kj,j)
+     &          wavesum_sml1,nkap,nm,nstates,2,unroll,ki,kj,j,d_m1,d_m2)
                 do l=0,2*nkap,2
                   mm(i,j)=mm(i,j)+unroll(l,1)+unroll(l,2)
                 enddo
@@ -3000,24 +3040,27 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       end
 
       subroutine MatrixMMGenerator_eqZodd(dTdXi,dRdXi,eigval,nkap,vmat,
-     &wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2)
+     &wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
+     &d_number_states_mj)
       include 'inc.par'
       real*8, dimension(:,:),allocatable:: wavesum_lge1,wavesum_sml1,
      &unroll,wavesum_lge2,wavesum_sml2
       real*8 eigval(nstates),vmat(nm,nm,0:2*nkap,nvmat),
      &wave_new(nstates,2*nm,-nkap:nkap),
      &dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
-     &dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2)
+     &dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
+     &d_number_states_mj(nstates)
       complex*16 mm(nstates,nstates)
       common /common_dkb/ dkb
-      common /momentum_projection/ amu,amj_max
       logical dkb
 
       mm=(0.d0,0.d0)
 
       if(dkb) then
         do i=1,nstates
+          d_m1=d_number_states_mj(i)
           do j=i+1,nstates
+            d_m2=d_number_states_mj(j)
             k1factor=(-1)**(nkap+1)
             do k1=nkap,1,-1
               ki=k1*k1factor
@@ -3034,11 +3077,11 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                 allocate(wavesum_sml2(nm,0:2*nkap))
                 call MatrixMM_Storage_DKB_2(wave_new,nm,nkap,
      &          nstates,2,dvdRmatdkb2,dvdRmatdkb1,wavesum_lge2,
-     &          wavesum_sml2,ki,i,kj)
+     &          wavesum_sml2,ki,i,kj,d_m1,d_m2)
                 allocate(unroll(0:2*nkap,2))
                 call unrolling_dkb(wavesum_lge1,wavesum_lge2,
      &          wave_new,wavesum_sml1,wavesum_sml2,nkap,nm,
-     &          nstates,2,unroll,ki,kj,j)
+     &          nstates,2,unroll,ki,kj,j,d_m1,d_m2)
                 do l=0,2*nkap,2
                   mm(i,j)=mm(i,j)+unroll(l,1)+unroll(l,2)
                 enddo
@@ -3059,7 +3102,9 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
         enddo
       else
         do i=1,nstates
+          d_m1=d_number_states_mj(i)
           do j=i+1,nstates
+            d_m2=d_number_states_mj(j)
             k1factor=(-1)**(nkap+1)
             do k1=nkap,1,-1
               ki=k1*k1factor
@@ -3074,7 +3119,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                 k2factor=-k2factor
                 allocate(unroll(0:2*nkap,2))
                 call unrolling_nondkb_1(wavesum_lge1,wave_new,
-     &          wavesum_sml1,nkap,nm,nstates,2,unroll,ki,kj,j)
+     &          wavesum_sml1,nkap,nm,nstates,2,unroll,ki,kj,j,d_m1,d_m2)
                 do l=0,2*nkap,2
                   mm(i,j)=mm(i,j)+unroll(l,1)+unroll(l,2)
                 enddo
@@ -4745,7 +4790,7 @@ C SHIFTS
       RETURN
       END
 
-      SUBROUTINE FXSHFR(L2, NZ)                                         FXS   10
+      SUBROUTINE FXSHFR(L2, NZ)
 C COMPUTES UP TO  L2  FIXED SHIFT K-POLYNOMIALS,
 C TESTING FOR CONVERGENCE IN THE LINEAR OR QUADRATIC
 C CASE. INITIATES ONE OF THE VARIABLE SHIFT
@@ -4859,7 +4904,7 @@ C SECOND STAGE
    80 CONTINUE
       RETURN
       END
-      SUBROUTINE QUADIT(UU, VV, NZ)                                     QUA   10
+      SUBROUTINE QUADIT(UU, VV, NZ)
 C VARIABLE-SHIFT K-POLYNOMIAL ITERATION FOR A
 C QUADRATIC FACTOR CONVERGES ONLY IF THE ZEROS ARE
 C EQUIMODULAR OR NEARLY SO.
@@ -4943,7 +4988,7 @@ C IF VI IS ZERO THE ITERATION IS NOT CONVERGING
       V = VI
       GO TO 10
       END
-      SUBROUTINE REALIT(SSS, NZ, IFLAG)                                 REA   10
+      SUBROUTINE REALIT(SSS, NZ, IFLAG)
 C VARIABLE-SHIFT H POLYNOMIAL ITERATION FOR A REAL
 C ZERO.
 C SSS   - STARTING ITERATE
@@ -5035,7 +5080,7 @@ C USE UNSCALED FORM
       S = S + T
       GO TO 10
       END
-      SUBROUTINE CALCSC(TYPE)                                           CAL   10
+      SUBROUTINE CALCSC(TYPE)
 C THIS ROUTINE CALCULATES SCALAR QUANTITIES USED TO
 C COMPUTE THE NEXT K POLYNOMIAL AND NEW ESTIMATES OF
 C THE QUADRATIC COEFFICIENTS.
@@ -5083,7 +5128,7 @@ C TYPE=1 INDICATES THAT ALL FORMULAS ARE DIVIDED BY C
       RETURN
       END
 
-      SUBROUTINE NEXTK(TYPE)                                            NEX   10
+      SUBROUTINE NEXTK(TYPE)
 C COMPUTES THE NEXT K POLYNOMIALS USING SCALARS
 C COMPUTED IN CALCSC
       COMMON /GLOBAL/ P, QP, K, QK, SVK, SR, SI, U,
@@ -5127,7 +5172,7 @@ C USE UNSCALED FORM OF THE RECURRENCE IF TYPE IS 3
       RETURN
       END
 
-      SUBROUTINE NEWEST(TYPE, UU, VV)                                   NEW   10
+      SUBROUTINE NEWEST(TYPE, UU, VV)
 C COMPUTE NEW ESTIMATES OF THE QUADRATIC COEFFICIENTS
 C USING THE SCALARS COMPUTED IN CALCSC.
       COMMON /GLOBAL/ P, QP, K, QK, SVK, SR, SI, U,
@@ -5168,7 +5213,7 @@ C IF TYPE=3 THE QUADRATIC IS ZEROED
       RETURN
       END
 
-      SUBROUTINE QUADSD(NN, U, V, P, Q, A, B)                           QUA   10
+      SUBROUTINE QUADSD(NN, U, V, P, Q, A, B)
 C DIVIDES P BY THE QUADRATIC  1,U,V  PLACING THE
 C QUOTIENT IN Q AND THE REMAINDER IN A,B
       DOUBLE PRECISION P(NN), Q(NN), U, V, A, B, C
@@ -5186,7 +5231,7 @@ C QUOTIENT IN Q AND THE REMAINDER IN A,B
       RETURN
       END
 
-      SUBROUTINE QUAD(A, B1, C, SR, SI, LR, LI)                         QUA   10
+      SUBROUTINE QUAD(A, B1, C, SR, SI, LR, LI)
 C CALCULATE THE ZEROS OF THE QUADRATIC A*Z**2+B1*Z+C.
 C THE QUADRATIC FORMULA, MODIFIED TO AVOID
 C OVERFLOW, IS USED TO FIND THE LARGER ZERO IF THE
@@ -9878,5 +9923,29 @@ c              df_sum_old(iii)=df_storage
         endif
       enddo
 
+      return
+      end
+
+      subroutine redifineEigvalWaveNew(n_jstates,eigval,eigval_mj,
+     &wave_new,wave_new_mj,d_number_states_mj,nstates,nm,nkap,d_mjMax)
+      real*8 eigval(2*n_jstates*nstates),eigval_mj(nstates,-n_jstates:
+     &n_jstates),
+     &wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap),
+     &wave_new_mj(nstates,2*nm,-nkap:nkap,-n_jstates:n_jstates),
+     &d_number_states_mj(2*n_jstates*nstates)
+
+      i_count = 0
+      do n_jstate=-n_jstates,n_jstates
+        if (n_jstate .ne. 0)then
+          d_number_states_mj((i_count*nstates+1):(i_count+1)*nstates) =
+     &    -d_mjMax+dble(i_count)
+          eigval((i_count*nstates+1):(i_count+1)*nstates) =
+     &    eigval_mj(:,n_jstate)
+          wave_new((i_count*nstates+1):(i_count+1)*nstates,2*nm,
+     &    -nkap:nkap) = wave_new_mj(:,:,:,n_jstate)
+          i_count = i_count + 1
+        endif
+      enddo
+      nstates = 2*n_jstates*nstates
       return
       end

@@ -22,15 +22,17 @@ c     must be constant there)
       common /recoil/ Recoil_on_off
       common /neg_cont/ Manual_ncont_states
       real*8, dimension(:),allocatable:: tknot,eigval,eigval_e,eigval_o,
-     &aaeigval
-      real*8, dimension(:,:),allocatable:: e,dmat,amat,eigvec,
-     &eigvec_e,eigvec_o
-      real*8, dimension(:,:,:),allocatable:: wave,ang,
-     &alternate_dmat,wave_new,wave_new_even,wave_new_odd
-      real*8, dimension(:,:,:,:),allocatable:: vmat
+     &aaeigval,d_number_states_mj,d_number_states_mj_even,
+     &d_number_states_mj_odd
+      real*8, dimension(:,:),allocatable:: e,dmat,
+     &eigvec_e,eigvec_o,eigval_mj,eigval_e_mj,eigval_o_mj
+      real*8, dimension(:,:,:),allocatable:: wave,
+     &wave_new,wave_new_even,wave_new_odd
+      real*8, dimension(:,:,:,:),allocatable:: vmat,wave_new_mj,
+     &wave_new_even_mj,wave_new_odd_mj
       real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1
       real*8, dimension(:,:,:,:,:,:),allocatable::dvdRmatdkb2
-      integer, dimension(:,:),allocatable:: number_states,num_st,
+      integer, dimension(:,:),allocatable:: number_states,
      &number_states_perm
       complex*16, dimension(:,:),allocatable:: bb,dd,pp,
      &aaeigvecr,mm,mmeven,mmodd
@@ -46,16 +48,18 @@ c     must be constant there)
       character*8 c_date
       character(len=:), allocatable:: status_q
       character*10 c_time,c_zone
+      character*13 inp_dir
+      common /input_directory/ inp_dir
       logical Manual_Coeff_Input,dkb,Sudden_approx,
      &state_range_input,Plots_wanted,Recoil_on_off,
      &init_recoil,Manual_ncont_states,mkdirs
-
+      inp_dir = 'input_output/'
       call factor()
 
       mkdirs=makedirqq('Coeffs')
       mkdirs=makedirqq('Mat_norms')
 
-      open(1,file='inp.inp',status='old')
+      open(1,file=inp_dir//'inp.inp',status='old')
       read(1,*) z_nuc1,r_sq1
       read(1,*) z_nuc2,r_sq2
       read(1,*) amu,amj_max
@@ -78,13 +82,13 @@ c     must be constant there)
       init_recoil=Recoil_on_off
 
       if(z_nuc2.gt. z_nuc1) then
-         open(1,file='inp.inp',status='old')
+         open(1,file=inp_dir//'inp.inp',status='old')
          read(1,*) z_nuc2,r_sq2
          read(1,*) z_nuc1,r_sq1
          close(1)
       endif
       if(Proj_mass.gt. Targ_mass) then
-         open(1,file='inp.inp',status='old')
+         open(1,file=inp_dir//'inp.inp',status='old')
          read(1,*)
          read(1,*)
          read(1,*)
@@ -116,7 +120,7 @@ cc         write(*,*) 'homogeneously charged sphere'
 c      case(3)
 cc         write(*,*) 'Fermi nuclear charge distribution'
 c      end select
-      open(1,file='data.inp',status='old')
+      open(1,file=inp_dir//'data.inp',status='old')
       read(1,*) rmin1,rmax1 ! size of the box
       read(1,*) up_energy
       read(1,*) wavenumb,amplitude
@@ -133,14 +137,13 @@ c      end select
          amplitude=E_amp/aNat_unit_Elec_field/wavenumb
       endif
 
-      open(1,file='nm.inp',status='old')
+      open(1,file=inp_dir//'nm.inp',status='old')
       read(1,*) nm
       close(1)
 cc      write(*,*) 'Number of splines',nm
-      open(1,file='nkap.inp',status='old')
+      open(1,file=inp_dir//'nkap.inp',status='old')
       read(1,*) nkap
       close(1)
-
 
 cc      write(*,*) 'different kappas',nkap
 
@@ -307,8 +310,9 @@ c     &Proj_vel,0.11394267720000001d0,0.d0,dThetadXi)
         endif
 
         R_std_dev=dabs(1.d0/(max(az1,az2)))
-        Translation_factor=1.d0!dexp(-(2.d0*distance)**2/2.d0/R_std_dev**2)
-      !0.5d0*derfc(R_std_dev*
+        Translation_factor=1.d0
+        !dexp(-(2.d0*distance)**2/2.d0/R_std_dev**2)
+        !0.5d0*derfc(R_std_dev*
 c     &(dabs(2.d0*distance)-(dabs(2.d0*Starting_distance)-
 c     &min(1.d0/R_std_dev,Starting_distance))))
          write(*,*)'TRANSLATION FACTOR',Translation_factor
@@ -392,7 +396,6 @@ c      the dv/dr terms required for the CC matrix.
         allocate(e(2*nm,-nkap:nkap))
         allocate(vmat(nm,nm,0:2*nkap,nvmat))
         allocate(dmat(2*nm,2*nm))
-        allocate(alternate_dmat(2*nm,2*nm,-nkap:nkap))
         allocate(dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2))
         allocate(dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2))
         allocate(number_states(2,-nkap:nkap))
@@ -400,13 +403,11 @@ c      the dv/dr terms required for the CC matrix.
         allocate(tknot(nu))
 
         write(*,*) 'SIZE OF MATRIX',4*(nm**2)*(2*nkap+2)*8/1000000,'MB'
-
         write(*,*) 'ENTERING B_SPLINE_CALCULATION'
         call b_spline_calculation_no_laser
      &  (nstates,nsto,nste,nm,nu,nkap,number_states,rmin,rmax,
      &  wave,vmat,nvmat,e,tknot,up_energy,dmat,
-     &  dvdRmatdkb1,dvdRmatdkb2,alternate_dmat)
-        deallocate(tknot)
+     &  dvdRmatdkb1,dvdRmatdkb2)
         if(ii_xi.eq.xi_stepslower)then
           number_states_perm=number_states
           nstates_perm=nstates
@@ -417,91 +418,146 @@ c      the dv/dr terms required for the CC matrix.
         nstates=nstates_perm
         nste=nste_perm
         nsto=nsto_perm
+        deallocate(tknot)
 
         call sign_of_states_monopole(number_states,
      &  wave,nstates,nm,nkap,ii_xi,xi_stepslower,rmin,rmax,'a')
-
+        d_amuOrig=amu
+        d_amjmaxOrig=amj_max
+        call DiracAngularJ(dble(nkap),d_mjMax)
+        n_jstates=1
+        if(b_ImpactParam .gt. 0.d0)then
+          n_jstates=nint(d_mjMax+0.5d0)
+          amu=d_mjMax
+          amj_max=amu
+        endif
         if(z_nuc1.ne.z_nuc2)then
-          allocate(ang(-nkap:nkap,-nkap:nkap,0:2*nkap))
-          call store_angle(nkap,ang)
-          allocate(num_st(-nkap:nkap,2*nm))
-          allocate(amat(nstates,nstates))
-          call form_matrix(nm,nkap,nstates,number_states,num_st,
-     &    amat,wave,vmat,nvmat,e,ang,1.d0)
-          allocate(eigvec(nstates,nstates))
-          allocate(eigval(nstates))
-          call r_diagonal('a',nstates,amat,eigval,eigvec)
-          allocate(wave_new(nstates,2*nm,-nkap:nkap))
-          call store_new_wave(nm,nstates,nkap,num_st,wave,
-     &    eigvec,wave_new)
-          deallocate(eigvec)
-          call swapping_of_states(wave_new,nstates,nm,nkap,
-     &    ii_xi,xi_stepslower,rmin,rmax,eigval,'a')
-          call sign_of_states(wave_new,nstates,nm,nkap,
-     &    ii_xi,xi_stepslower,rmin,rmax,'a')
-          deallocate(amat)
-          deallocate(num_st)
-          deallocate(ang)
+          allocate(eigval_mj(nstates,-n_jstates:n_jstates))
+          eigval_mj=0.d0
+          allocate(wave_new_mj(nstates,2*nm,-nkap:nkap,
+     &    -n_jstates:n_jstates))
+          wave_new_mj=0.d0
+          do n_jstate=n_jstates,1,-1
+            allocate(eigval(nstates))
+            allocate(wave_new(nstates,2*nm,-nkap:nkap))
+            i_even_odd_normal = 0
+            call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
+     &vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,wave_new,
+     %i_even_odd_normal)
+            if(b_ImpactParam .gt. 0.d0)then
+              amu=amu-1.d0
+              amj_max=amj_max-1.d0
+              eigval_mj(:,n_jstate)=eigval
+              eigval_mj(:,-n_jstate)=eigval
+              wave_new_mj(:,:,:,n_jstate)=wave_new
+              wave_new_mj(:,:,:,-n_jstate)=wave_new
+              deallocate(eigval)
+              deallocate(wave_new)
+            endif
+          enddo
           allocate(mm(nstates,nstates))
         else
-          allocate(ang(-nkap:nkap,-nkap:nkap,0:2*nkap))
-          call store_angle(nkap,ang)
-          allocate(num_st(-nkap:nkap,2*nm))
-          allocate(amat(nste,nste))
-          call form_matrix_even(nm,nkap,nste,number_states,num_st,
-     &    amat,wave,vmat,nvmat,e,ang,1.d0)
-          allocate(eigvec_e(nste,nste))
-          allocate(eigval_e(nste))
-          call r_diagonal('e',nste,amat,eigval_e,eigvec_e)
-          allocate(wave_new_even(nste,2*nm,-nkap:nkap))
-          call store_new_wave(nm,nste,nkap,num_st,wave,
-     &    eigvec_e,wave_new_even)
-          deallocate(eigvec_e)
-          call swapping_of_states(wave_new_even,nste,nm,nkap,
-     &    ii_xi,xi_stepslower,rmin,rmax,eigval_e,'e')
-          call sign_of_states(wave_new_even,nste,nm,nkap,
-     &    ii_xi,xi_stepslower,rmin,rmax,'e')
-          deallocate(num_st)
-          deallocate(amat)
-          allocate(amat(nsto,nsto))
-          allocate(num_st(-nkap:nkap,2*nm))
-          call form_matrix_odd(nm,nkap,nsto,number_states,num_st,
-     &    amat,wave,vmat,nvmat,e,ang,1.d0)
-          allocate(eigvec_o(nsto,nsto))
-          allocate(eigval_o(nsto))
-          call r_diagonal('o',nsto,amat,eigval_o,eigvec_o)
-          allocate(wave_new_odd(nsto,2*nm,-nkap:nkap))
-          call store_new_wave(nm,nsto,nkap,num_st,wave,
-     &    eigvec_o,wave_new_odd)
-          deallocate(eigvec_o)
-          call swapping_of_states(wave_new_odd,nsto,nm,nkap,
-     &    ii_xi,xi_stepslower,rmin,rmax,eigval_o,'o')
-          call sign_of_states(wave_new_odd,nsto,nm,nkap,
-     &    ii_xi,xi_stepslower,rmin,rmax,'o')
-          deallocate(num_st)
-          deallocate(amat)
-          deallocate(ang)
+          allocate(eigval_e_mj(nste,-n_jstates:n_jstates))
+          eigval_e_mj=0.d0
+          allocate(wave_new_even_mj(nste,2*nm,-nkap:nkap,
+     &    -n_jstates:n_jstates))
+          wave_new_even_mj=0.d0
+          allocate(eigval_o_mj(nsto,-n_jstates:n_jstates))
+          eigval_o_mj=0.d0
+          allocate(wave_new_odd_mj(nste,2*nm,-nkap:nkap,
+     &    -n_jstates:n_jstates))
+          wave_new_odd_mj=0.d0
+          do n_jstate=n_jstates,1,-1
+            allocate(eigval_e(nste))
+            allocate(wave_new_even(nste,2*nm,-nkap:nkap))
+            i_even_odd_normal = 1
+            call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
+     &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
+            wave_new_even,i_even_odd_normal)
+            allocate(eigval_o(nsto))
+            allocate(wave_new_odd(nsto,2*nm,-nkap:nkap))
+            i_even_odd_normal = 2
+            call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
+     &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
+            wave_new_odd,i_even_odd_normal)
+            if(b_ImpactParam .gt. 0.d0)then
+              amu=amu-1.d0
+              amj_max=amj_max-1.d0
+              eigval_e_mj(:,n_jstate)=eigval_e
+              eigval_e_mj(:,-n_jstate)=eigval_e
+              eigval_o_mj(:,n_jstate)=eigval_o
+              eigval_o_mj(:,-n_jstate)=eigval_o
+              wave_new_even_mj(:,:,:,n_jstate)=wave_new_even
+              wave_new_even_mj(:,:,:,-n_jstate)=wave_new_even
+              wave_new_odd_mj(:,:,:,n_jstate)=wave_odd_even
+              wave_new_odd_mj(:,:,:,-n_jstate)=wave_odd_even
+              deallocate(eigval_e)
+              deallocate(eigval_o)
+              deallocate(wave_new_even)
+              deallocate(wave_new_odd)
+            endif
+          enddo
           allocate(mmeven(nste,nste))
           allocate(mmodd(nsto,nsto))
         endif
 
+        if(b_ImpactParam .gt. 0.d0)then
+          amu=d_amuOrig
+          amj_mnax=d_amjmaxOrig
+        endif
         deallocate(number_states)
         deallocate(wave)
         deallocate(e)
 
         if(z_nuc1.ne.z_nuc2)then
           write(*,*) 'ENTER MAIN MATRIX'
+          if(b_ImpactParam .gt. 0.d0)then
+            allocate(d_number_states_mj(2*n_jstates*nstates))
+          ! Expand the size of eigval and wavenew
+            allocate(eigval(2*n_jstates*nstates)
+            allocate(wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap))
+            call redifineEigvalWaveNew(n_jstates,eigval,eigval_mj,
+     &      wave_new,wave_new_mj,d_number_states_mj,nstates,nm,nkap,
+     &      d_mjMax)
+            deallocate(eigval_mj)
+            deallocate(wave_new_mj)
+          else
+            allocate(d_number_states_mj(nstates))
+            d_number_states_mj = amu
+          endif
           CALL MatrixMMGenerator_neqZ(dTdXi,dRdXi,eigval,nkap,vmat,
-     &    wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2)
+     &    wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
+     &    d_number_states_mj)
+          deallocate(d_number_states_mj)
           write(*,*) 'EXIT MAIN MATRIX'
         else
           write(*,*) 'ENTER MAIN MATRIX'
+          if(b_ImpactParam .gt. 0.d0)then
+            allocate(d_number_states_mj_even(2*n_jstates*nste))
+            allocate(eigval_e(2*n_jstates*nste)
+            allocate(wave_new_even(2*n_jstates*nste,2*nm,-nkap:nkap))
+            call redifineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
+     &      wave_new_even,wave_new_even_mj,d_number_states_mj_even,nste,
+     &      nm,nkap,d_mjMax)
+            deallocate(eigval_e_mj)
+            deallocate(wave_new_even_mj)
+            allocate(d_number_states_mj_odd(2*n_jstates*nsto))
+            allocate(eigval_o(2*n_jstates*nsto)
+            allocate(wave_new_odd(2*n_jstates*nsto,2*nm,-nkap:nkap))
+            call redifineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
+     &      wave_new_odd,wave_new_odd_mj,d_number_states_mj_odd,nsto,
+     &      nm,nkap,d_mjMax)
+            deallocate(eigval_o_mj)
+            deallocate(wave_new_odd_mj)
+          endif
           CALL MatrixMMGenerator_eqZeven(dTdXi,dRdXi,eigval_e,nkap,
      &    vmat,wave_new_even,nste,nm,nvmat,mmeven,dvdRmatdkb1,
-     &    dvdRmatdkb2)
+     &    dvdRmatdkb2,d_number_states_mj_even)
+          deallocate(d_number_states_mj_even)
           CALL MatrixMMGenerator_eqZodd(dTdXi,dRdXi,eigval_o,nkap,
      &    vmat,wave_new_odd,nsto,nm,nvmat,mmodd,dvdRmatdkb1,
-     &    dvdRmatdkb2)
+     &    dvdRmatdkb2,d_number_states_mj_odd)
+          deallocate(d_number_states_mj_odd)
           write(*,*) 'EXIT MAIN MATRIX'
         endif
 
@@ -517,7 +573,6 @@ c      the dv/dr terms required for the CC matrix.
         endif
 
         deallocate(dmat)
-        deallocate(alternate_dmat)
 
         if(ii_xi.eq.xi_stepslower) then
           allocate(coeff(nstates))

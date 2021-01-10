@@ -71688,7 +71688,7 @@ C *** Last line of DSKR2K ***
 *
       END
 
-      SUBROUTINE TRIZD ( NA, N, A, E )                                  TRIZ0001
+      SUBROUTINE TRIZD ( NA, N, A, E )
 C
 C ****
 C
@@ -71800,7 +71800,7 @@ C
   230 E(1) = 0.d0
       RETURN
       END
-      SUBROUTINE IMZD ( N, E, MATZ, SKEW, NZ, Z, IERR )                 IMZD0001
+      SUBROUTINE IMZD ( N, E, MATZ, SKEW, NZ, Z, IERR )
 C
 C ****
 C
@@ -72077,7 +72077,7 @@ C
 C
   370 RETURN
       END
-      SUBROUTINE TBAKZD ( NA, N, A, M, NZ, Z )                          TBAK0001
+      SUBROUTINE TBAKZD ( NA, N, A, M, NZ, Z )
 C
 C ****
 C

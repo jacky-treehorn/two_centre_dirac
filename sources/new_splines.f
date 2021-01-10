@@ -1007,7 +1007,7 @@ ccc******************** dV/dR Matrix elements for the baryonic expansion
       common /dist/distance,Starting_Distance
       common /Barycentres/ RadiusOne,RadiusTwo
       integer nkap
-      real*8 u(0:2*nkap),ro(ns),t1(nul),ro1(ns),ro2(ns),!ro12(ns,0:2*nkap),
+      real*8 u(0:2*nkap),ro(ns),t1(nul),ro1(ns),ro2(ns),
      &dv_dR(0:2*nkap)
 
       call ddsplines(x,ro,ro1,ro2,in,t1,nul)
@@ -1493,7 +1493,9 @@ c      enddo
       real*8, dimension(:),allocatable:: vsp_blas2
       integer, dimension(:),allocatable:: IFAIL,vsp_blas3
       character*1 JOBZ,RANGE,UPLO,RR
+      character*13 inp_dir
       common /blas_inp/ IL,IU,RR
+      common /input_directory/ inp_dir
 
 
       allocate(vspom4(2*nm,2*nm))
@@ -1509,7 +1511,7 @@ c      enddo
       allocate(vsp_blas3(10*nm))
       allocate(vsp_blas2(16*nm))
 
-      open(1,file='blas.inp')
+      open(1,file=inp_dir//'blas.inp')
       read(1,*) JOBZ
       read(1,*) RANGE
       read(1,*) UPLO
@@ -1575,15 +1577,14 @@ c         write(*,*) 'NORMAL EXIT FROM DSYGVX',INFO
       end
 
 
-      subroutine
-     &     form_matrix(nm,nkap,nstates,number_states,num_st,
-     &     amat,wave,vmat,nvmat,e,ang,Translation_factor)
+      subroutine form_matrix(nm,nkap,nstates,number_states,num_st,
+     &amat,wave,vmat,nvmat,e,ang,Translation_factor)
       include 'inc.par'
       integer number_states(2,-nkap:nkap)
       real*8 amat(nstates,nstates)
       real*8 wave(2*nm,2*nm,-nkap:nkap),
-     &     vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),
-     &     ang(-nkap:nkap,-nkap:nkap,0:2*nkap)
+     &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),
+     &ang(-nkap:nkap,-nkap:nkap,0:2*nkap)
       integer num_st(-nkap:nkap,2*nm)
       real*8, dimension(:,:,:),allocatable:: vmatr
 
@@ -1595,60 +1596,60 @@ c      write(*,*) 'COMPOSING CI MATRIX'
 
       n1=0
       do k1=-nkap,-1
-         do j1=number_states(1,k1),number_states(2,k1)
-         n1=n1+1
-         amat(n1,n1)=e(j1,k1)
-         num_st(k1,j1)=n1
-         enddo
+        do j1=number_states(1,k1),number_states(2,k1)
+          n1=n1+1
+          amat(n1,n1)=e(j1,k1)
+          num_st(k1,j1)=n1
+        enddo
       enddo
 
       do k1=1,nkap
-         do j1=number_states(1,k1),number_states(2,k1)
+        do j1=number_states(1,k1),number_states(2,k1)
 c            if(j1.ne.nm+1)then
-         n1=n1+1
-         amat(n1,n1)=e(j1,k1)
-         num_st(k1,j1)=n1
-         enddo
+          n1=n1+1
+          amat(n1,n1)=e(j1,k1)
+          num_st(k1,j1)=n1
+        enddo
       enddo
 
 
       do k1=-nkap,nkap
-         do k2=-nkap,nkap
+        do k2=-nkap,nkap
 c            write(*,*) 'COMPOSING KAPPAS',k1,k2
-         nnn2=number_states(1,k2)
-         nn2=number_states(2,k2)-number_states(1,k2)+1
-         allocate(vmatr(nm,nn2,2))
-            if(k1*k2.ne.0)then
-               call stor_matr(k1,k2,
-     &              number_states(1,k2),nn2,
-     &              vmatr,nm,nkap,vmat,nvmat,wave,ang,1,1)
-               do j1=number_states(1,k1),number_states(2,k1)
-                  do j2=number_states(1,k2),number_states(2,k2)
-                  n1=num_st(k1,j1)
-                  n2=num_st(k2,j2)
-                     if(n1*n2.ne.0)then
-                        do i=1,nm
-                        amat(n1,n2)=amat(n1,n2)+
-     &                  wave(i,j1,k1)*vmatr(i,j2-nnn2+1,1)
-                        amat(n1,n2)=amat(n1,n2)+
-     &                  wave(i+nm,j1,k1)*vmatr(i,j2-nnn2+1,2)
-                        enddo
-                        if(n1.ne.n2)then
-                        amat(n1,n2)=amat(n1,n2)*Translation_factor
+          nnn2=number_states(1,k2)
+          nn2=number_states(2,k2)-number_states(1,k2)+1
+          allocate(vmatr(nm,nn2,2))
+          if(k1*k2.ne.0)then
+            call stor_matr(k1,k2,
+     &      number_states(1,k2),nn2,
+     &      vmatr,nm,nkap,vmat,nvmat,wave,ang,1,1)
+            do j1=number_states(1,k1),number_states(2,k1)
+              do j2=number_states(1,k2),number_states(2,k2)
+                n1=num_st(k1,j1)
+                n2=num_st(k2,j2)
+                if(n1*n2.ne.0)then
+                  do i=1,nm
+                    amat(n1,n2)=amat(n1,n2)+
+     &              wave(i,j1,k1)*vmatr(i,j2-nnn2+1,1)
+                    amat(n1,n2)=amat(n1,n2)+
+     &              wave(i+nm,j1,k1)*vmatr(i,j2-nnn2+1,2)
+                  enddo
+                  if(n1.ne.n2)then
+                    amat(n1,n2)=amat(n1,n2)*Translation_factor
 !                        amat(n2,n1)=amat(n1,n2)
-                        endif
+                  endif
 c$$$                        write(*,*) 'STATES NUMBER',j1,j2
 c$$$                        write(*,*) 'STATES KAPPAS',k1,k2
 c$$$                        write(*,*) 'STATES ENERGIES',e(j1,k1),e(j2,k2)
 c$$$                        write(*,*) 'MATRIX ELEMENT',n1,n2,amat(n1,n2)
 c$$$   pause
 c$$$                        if(amat(n1,n2).ne.0.d0) pause
-                     endif
-                  enddo
-               enddo
-            endif
-         deallocate(vmatr)
-         enddo
+                endif
+              enddo
+            enddo
+          endif
+          deallocate(vmatr)
+        enddo
       enddo
 
 c      write(*,*) 'MATRIX COMPOSED'
@@ -2471,8 +2472,7 @@ c               endif
 
       subroutine b_spline_calculation_no_laser(nstates,nsto,nste,
      &nm,nu,nkap,number_states,rmin,rmax,wave1,vmat,nvmat,
-     &e,t,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,
-     &alternate_dmat)
+     &e,t,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2)
       include 'inc.par'
       real*8, dimension(:),allocatable:: u,cc
       real*8, dimension(:,:),allocatable:: amat,wave,dmat,b,b_2,dd,d3
@@ -2491,7 +2491,7 @@ c               endif
      &w32(32),t32(32),w64(64),t64(64),t6(6),w6(6)
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 ttt(nuz),www(nuz),dv_dR(0:2*nkap),el(2*nm)
-      common /dist/distance,Starting_Distance
+      common /dist/ distance,Starting_Distance
       integer number_states(2,-nkap:nkap)
       integer One_s_state_location,xi_stepslower,xi_stepsupper
       logical dkb,Manual_ncont_states
@@ -3020,3 +3020,47 @@ c I am guessing that wave is vector v in eq 16 of Johnson
       return
       end
 
+      subroutine buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
+     &vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,wave_new,
+     &i_even_odd_normal)
+      include 'inc.par'
+      integer number_states(2,-nkap:nkap), xi_stepslower
+      real*8 wave(2*nm,2*nm,-nkap:nkap),vmat(nm,nm,0:2*nkap,nvmat),
+     &e(2*nm,-nkap:nkap),rmin,rmax,eigval(nstates),
+     &wave_new(nstates,2*nm,-nkap:nkap)
+      character*1 char_even_odd_normal
+
+      char_even_odd_normal = 'a'
+      allocate(ang(-nkap:nkap,-nkap:nkap,0:2*nkap))
+      call store_angle(nkap,ang)
+      allocate(num_st(-nkap:nkap,2*nm))
+      allocate(amat(nstates,nstates))
+      select case (i_even_odd_normal)
+        case(0)
+          call form_matrix(nm,nkap,nstates,number_states,num_st,
+     &    amat,wave,vmat,nvmat,e,ang,1.d0)
+          char_even_odd_normal = 'a'
+        case(1)
+          call form_matrix_even(nm,nkap,nstates,number_states,num_st,
+     &    amat,wave,vmat,nvmat,e,ang,1.d0)
+          char_even_odd_normal = 'e'
+        case(2)
+          call form_matrix_odd(nm,nkap,nstates,number_states,num_st,
+     &    amat,wave,vmat,nvmat,e,ang,1.d0)
+          char_even_odd_normal = 'o'
+      end select
+      allocate(eigvec(nstates,nstates))
+      call r_diagonal(char_even_odd_normal,nstates,amat,eigval,eigvec)
+      call store_new_wave(nm,nstates,nkap,num_st,wave,
+     &eigvec,wave_new)
+      deallocate(eigvec)
+      call swapping_of_states(wave_new,nstates,nm,nkap,
+     &ii_xi,xi_stepslower,rmin,rmax,eigval,char_even_odd_normal)
+      call sign_of_states(wave_new,nstates,nm,nkap,
+     &ii_xi,xi_stepslower,rmin,rmax,char_even_odd_normal)
+      deallocate(amat)
+      deallocate(num_st)
+      deallocate(ang)
+
+      return
+      end

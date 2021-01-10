@@ -1,8 +1,8 @@
-V	!N - only eigennumbers, V - also vectors
-A	!A - all, V - interval for eigenvalues, I - numbers for them
-U	!U - upper or L - lower triangle of A is stored
-0.d0	!Lower value of the interval for the eigenvectors
-1.d0	!Upper value of the interval for the eigenvectors
-10	!Number of negative-energy states (if Line #2 = 'I')
-10	!Number of positive-energy states (if Line #2 = 'I')
-1.d-16	!Precision tolerance
+V       !N - only eigennumbers, V - also vectors
+A       !A - all, V - interval for eigenvalues, I - numbers for them
+U       !U - upper or L - lower triangle of A is stored
+0.d0    !Lower value of the interval for the eigenvectors
+1.d0    !Upper value of the interval for the eigenvectors
+10      !Number of negative-energy states (if Line #2 = 'I')
+10      !Number of positive-energy states (if Line #2 = 'I')
+1.d-16  !Precision tolerance
