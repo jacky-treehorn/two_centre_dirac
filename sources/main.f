@@ -4,6 +4,8 @@ c     initially come from Ilya, they contain potentials in
 c     atomic units, mutiplied by R. (i.e. pure Coulomb potential
 c     must be constant there)
 
+c     AUTHOR: Sean McConnell
+
       include 'inc.par'
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
