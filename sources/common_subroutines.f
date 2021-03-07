@@ -2853,6 +2853,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
             d_m1=d_number_states_mj(i)
             do j=i+1,nstates
                d_m2=d_number_states_mj(j)
+               if (d_m1 .ne. d_m2) cycle
                do ki=-nkap,nkap
                   if(ki.ne.0)then
                      allocate(wavesum_lge1(nm,0:2*nkap))
@@ -2897,6 +2898,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
             d_m1=d_number_states_mj(i)
             do j=i+1,nstates
                d_m2=d_number_states_mj(j)
+               if (d_m1 .ne. d_m2) cycle
                do ki=-nkap,nkap
                   if(ki.ne.0)then
                      allocate(wavesum_lge1(nm,0:2*nkap))
@@ -2957,6 +2959,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
             d_m2=d_number_states_mj(j)
+            if (d_m1 .ne. d_m2) cycle
             k1factor=(-1)**nkap
             do k1=nkap,1,-1
               ki=k1factor*k1
@@ -3001,6 +3004,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
             d_m2=d_number_states_mj(j)
+            if (d_m1 .ne. d_m2) cycle
             k1factor=(-1)**nkap
             do k1=nkap,1,-1
               ki=k1*k1factor
@@ -3061,6 +3065,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
             d_m2=d_number_states_mj(j)
+            if (d_m1 .ne. d_m2) cycle
             k1factor=(-1)**(nkap+1)
             do k1=nkap,1,-1
               ki=k1*k1factor
@@ -3105,6 +3110,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
             d_m2=d_number_states_mj(j)
+            if (d_m1 .ne. d_m2) cycle
             k1factor=(-1)**(nkap+1)
             do k1=nkap,1,-1
               ki=k1*k1factor
@@ -6529,7 +6535,7 @@ c       endif
       end
 
       subroutine Rotating_INaxis(nstates,nm,nkap,dthetadt,
-     &nsts,bb_mjj,dmat,alt_dmat,wave_new)
+     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
       include 'inc.par'
       complex*16 bb_mjj(nsts,nsts)
       real*8 dmat(2*nm,2*nm),alt_dmat(2*nm,2*nm,-nkap:nkap),
@@ -6538,10 +6544,9 @@ c       endif
       real*8, dimension(:,:,:,:),allocatable:: shifted_norm_plus,
      & shifted_norm_minus
       common /common_dkb/ dkb
-      common /momentum_projection/ amu,amj_max
       logical dkb
 
-      mj_max=nint(amj_max+0.5d0)
+      mj_max=nint(d_mjMax+0.5d0)
 
       allocate(norm_mat(nstates,nstates,-nkap:nkap))
       norm_mat=0.d0
@@ -6656,7 +6661,7 @@ c       endif
       end
 
       subroutine Rotating_INaxis_even(nstates,nm,nkap,dthetadt,
-     &nsts,bb_mjj,dmat,alt_dmat,wave_new)
+     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
       include 'inc.par'
       complex*16 bb_mjj(nsts,nsts)
       real*8 dmat(2*nm,2*nm),alt_dmat(2*nm,2*nm,-nkap:nkap),
@@ -6665,10 +6670,9 @@ c       endif
       real*8, dimension(:,:,:,:),allocatable:: shifted_norm_plus,
      &shifted_norm_minus
       common /common_dkb/ dkb
-      common /momentum_projection/ amu,amj_max
       logical dkb
 
-      mj_max=nint(amj_max+0.5d0)
+      mj_max=nint(d_mjMax+0.5d0)
 
       allocate(norm_mat(nstates,nstates,-nkap:nkap))
       norm_mat=0.d0
@@ -6761,23 +6765,39 @@ c       endif
 
       deallocate(norm_mat)
 
-      j_start=1
+
+      i_col=1
       do mj1=-mj_max,mj_max-1
-        i_col=1
-        do mj2=-mj_max,mj_max-1
-          do i=1,nstates
-            j_row=j_start
+        do i=1,nstates
+          j_row=1
+          do mj2=-mj_max,mj_max-1
             do j=1,nstates
               bb_mjj(i_col,j_row)=(0.5d0,0.d0)*
      &        (shifted_norm_minus(i,j,mj1,mj2)-
      &        shifted_norm_plus(i,j,mj1,mj2))
               j_row=j_row+1
             enddo
-            i_col=i_col+1
           enddo
+          i_col=i_col+1
         enddo
-        j_start=j_row
       enddo
+!      j_start=1
+!      do mj1=-mj_max,mj_max-1
+!        i_col=1
+!        do mj2=-mj_max,mj_max-1
+!          do i=1,nstates
+!            j_row=j_start
+!            do j=1,nstates
+!              bb_mjj(i_col,j_row)=(0.5d0,0.d0)*
+!     &        (shifted_norm_minus(i,j,mj1,mj2)-
+!     &        shifted_norm_plus(i,j,mj1,mj2))
+!              j_row=j_row+1
+!            enddo
+!            i_col=i_col+1
+!          enddo
+!        enddo
+!        j_start=j_row
+!      enddo
 
       bb_mjj=bb_mjj*(0,-1)*dthetadt
 
@@ -6788,7 +6808,7 @@ c       endif
       end
 
       subroutine Rotating_INaxis_odd(nstates,nm,nkap,dthetadt,
-     &nsts,bb_mjj,dmat,alt_dmat,wave_new)
+     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
       include 'inc.par'
       complex*16 bb_mjj(nsts,nsts)
       real*8 dmat(2*nm,2*nm),alt_dmat(2*nm,2*nm,-nkap:nkap),
@@ -6797,10 +6817,9 @@ c       endif
       real*8, dimension(:,:,:,:),allocatable:: shifted_norm_plus,
      &shifted_norm_minus
       common /common_dkb/ dkb
-      common /momentum_projection/ amu,amj_max
       logical dkb
 
-      mj_max=nint(amj_max+0.5d0)
+      mj_max=nint(d_mjMax+0.5d0)
 
       allocate(norm_mat(nstates,nstates,-nkap:nkap))
       norm_mat=0.d0

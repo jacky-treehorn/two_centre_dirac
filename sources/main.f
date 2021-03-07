@@ -25,9 +25,9 @@ c     must be constant there)
      &aaeigval,d_number_states_mj,d_number_states_mj_even,
      &d_number_states_mj_odd
       real*8, dimension(:,:),allocatable:: e,dmat,
-     &eigvec_e,eigvec_o,eigval_mj,eigval_e_mj,eigval_o_mj
+     &eigval_mj,eigval_e_mj,eigval_o_mj
       real*8, dimension(:,:,:),allocatable:: wave,
-     &wave_new,wave_new_even,wave_new_odd
+     &wave_new,wave_new_even,wave_new_odd,alt_dmat
       real*8, dimension(:,:,:,:),allocatable:: vmat,wave_new_mj,
      &wave_new_even_mj,wave_new_odd_mj
       real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1
@@ -35,7 +35,7 @@ c     must be constant there)
       integer, dimension(:,:),allocatable:: number_states,
      &number_states_perm
       complex*16, dimension(:,:),allocatable:: bb,dd,pp,
-     &aaeigvecr,mm,mmeven,mmodd
+     &aaeigvecr,mm,mmeven,mmodd,bb_mjj,bb_mjj_even,bb_mjj_odd
       complex*16, dimension(:), allocatable :: ddmatnorm,coeff,
      &coefffornorm!,coefffornorm_prev,coeff_prev
       real*8 i_xi,i_xi_next,i_xi_prev
@@ -401,13 +401,14 @@ c      the dv/dr terms required for the CC matrix.
         allocate(number_states(2,-nkap:nkap))
         allocate(wave(2*nm,2*nm,-nkap:nkap))
         allocate(tknot(nu))
+        allocate(alt_dmat(2*nm,2*nm,-nkap:nkap))
 
         write(*,*) 'SIZE OF MATRIX',4*(nm**2)*(2*nkap+2)*8/1000000,'MB'
         write(*,*) 'ENTERING B_SPLINE_CALCULATION'
         call b_spline_calculation_no_laser
      &  (nstates,nsto,nste,nm,nu,nkap,number_states,rmin,rmax,
      &  wave,vmat,nvmat,e,tknot,up_energy,dmat,
-     &  dvdRmatdkb1,dvdRmatdkb2)
+     &  dvdRmatdkb1,dvdRmatdkb2,alt_dmat)
         if(ii_xi.eq.xi_stepslower)then
           number_states_perm=number_states
           nstates_perm=nstates
@@ -443,7 +444,7 @@ c      the dv/dr terms required for the CC matrix.
             i_even_odd_normal = 0
             call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
      &vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,wave_new,
-     %i_even_odd_normal)
+     &i_even_odd_normal)
             if(b_ImpactParam .gt. 0.d0)then
               amu=amu-1.d0
               amj_max=amj_max-1.d0
@@ -452,6 +453,10 @@ c      the dv/dr terms required for the CC matrix.
               wave_new_mj(:,:,:,n_jstate)=wave_new
               wave_new_mj(:,:,:,-n_jstate)=wave_new
               deallocate(eigval)
+              nsts=2*n_jstates*nstates
+              allocate(bb_mjj(nsts,nsts))
+              call Rotating_INaxis(nstates,nm,nkap,dthetadt,
+     &        nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
               deallocate(wave_new)
             endif
           enddo
@@ -492,6 +497,14 @@ c      the dv/dr terms required for the CC matrix.
               wave_new_odd_mj(:,:,:,-n_jstate)=wave_odd_even
               deallocate(eigval_e)
               deallocate(eigval_o)
+              nsts=2*n_jstates*nste
+              allocate(bb_mjj_even(nsts,nsts))
+              call Rotating_INaxis_even(nste,nm,nkap,dthetadt,
+     &        nsts,bb_mjj_even,dmat,alt_dmat,wave_new_even,d_mjMax)
+              nsts=2*n_jstates*nsto
+              allocate(bb_mjj_odd(nsts,nsts))
+              call Rotating_INaxis_odd(nsto,nm,nkap,dthetadt,
+     &        nsts,bb_mjj_odd,dmat,alt_dmat,wave_new_odd,d_mjMax)
               deallocate(wave_new_even)
               deallocate(wave_new_odd)
             endif
@@ -527,6 +540,10 @@ c      the dv/dr terms required for the CC matrix.
      &    wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
      &    d_number_states_mj)
           deallocate(d_number_states_mj)
+          if(b_ImpactParam .gt. 0.d0)then
+            mm = mm + bb_mjj
+            deallocate(bb_mjj)
+          endif
         else
           if(b_ImpactParam .gt. 0.d0)then
             allocate(d_number_states_mj_even(2*n_jstates*nste))
@@ -556,11 +573,19 @@ c      the dv/dr terms required for the CC matrix.
      &    vmat,wave_new_even,nste,nm,nvmat,mmeven,dvdRmatdkb1,
      &    dvdRmatdkb2,d_number_states_mj_even)
           deallocate(d_number_states_mj_even)
+          if(b_ImpactParam .gt. 0.d0)then
+            mmeven = mmeven + bb_mjj_even
+            deallocate(bb_mjj_even)
+          endif
           allocate(mmodd(nsto,nsto))
           CALL MatrixMMGenerator_eqZodd(dTdXi,dRdXi,eigval_o,nkap,
      &    vmat,wave_new_odd,nsto,nm,nvmat,mmodd,dvdRmatdkb1,
      &    dvdRmatdkb2,d_number_states_mj_odd)
           deallocate(d_number_states_mj_odd)
+          if(b_ImpactParam .gt. 0.d0)then
+            mmodd = mmodd + bb_mjj_odd
+            deallocate(bb_mjj_odd)
+          endif
         endif
         write(*,*) 'EXIT MAIN MATRIX'
 
@@ -576,6 +601,7 @@ c      the dv/dr terms required for the CC matrix.
         endif
 
         deallocate(dmat)
+        deallocate(alt_dmat)
 
         if(ii_xi.eq.xi_stepslower) then
           allocate(coeff(nstates))

@@ -2446,7 +2446,7 @@ c               endif
 
       subroutine b_spline_calculation_no_laser(nstates,nsto,nste,
      &nm,nu,nkap,number_states,rmin,rmax,wave1,vmat,nvmat,
-     &e,t,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2)
+     &e,t,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,alternate_dmat)
       include 'inc.par'
       real*8, dimension(:),allocatable:: u,cc
       real*8, dimension(:,:),allocatable:: amat,wave,dmat,b,b_2,dd,d3
