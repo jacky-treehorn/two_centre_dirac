@@ -4,8 +4,6 @@ c     initially come from Ilya, they contain potentials in
 c     atomic units, mutiplied by R. (i.e. pure Coulomb potential
 c     must be constant there)
 
-c     AUTHOR: Sean McConnell
-
       include 'inc.par'
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
@@ -457,7 +455,6 @@ c      the dv/dr terms required for the CC matrix.
               deallocate(wave_new)
             endif
           enddo
-          allocate(mm(nstates,nstates))
         else
           allocate(eigval_e_mj(nste,-n_jstates:n_jstates))
           eigval_e_mj=0.d0
@@ -475,13 +472,13 @@ c      the dv/dr terms required for the CC matrix.
             i_even_odd_normal = 1
             call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
      &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
-            wave_new_even,i_even_odd_normal)
+     &      wave_new_even,i_even_odd_normal)
             allocate(eigval_o(nsto))
             allocate(wave_new_odd(nsto,2*nm,-nkap:nkap))
             i_even_odd_normal = 2
             call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
      &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
-            wave_new_odd,i_even_odd_normal)
+     &      wave_new_odd,i_even_odd_normal)
             if(b_ImpactParam .gt. 0.d0)then
               amu=amu-1.d0
               amj_max=amj_max-1.d0
@@ -499,8 +496,6 @@ c      the dv/dr terms required for the CC matrix.
               deallocate(wave_new_odd)
             endif
           enddo
-          allocate(mmeven(nste,nste))
-          allocate(mmodd(nsto,nsto))
         endif
 
         if(b_ImpactParam .gt. 0.d0)then
@@ -511,12 +506,12 @@ c      the dv/dr terms required for the CC matrix.
         deallocate(wave)
         deallocate(e)
 
+        write(*,*) 'ENTER MAIN MATRIX'
         if(z_nuc1.ne.z_nuc2)then
-          write(*,*) 'ENTER MAIN MATRIX'
           if(b_ImpactParam .gt. 0.d0)then
             allocate(d_number_states_mj(2*n_jstates*nstates))
           ! Expand the size of eigval and wavenew
-            allocate(eigval(2*n_jstates*nstates)
+            allocate(eigval(2*n_jstates*nstates))
             allocate(wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap))
             call redifineEigvalWaveNew(n_jstates,eigval,eigval_mj,
      &      wave_new,wave_new_mj,d_number_states_mj,nstates,nm,nkap,
@@ -527,16 +522,15 @@ c      the dv/dr terms required for the CC matrix.
             allocate(d_number_states_mj(nstates))
             d_number_states_mj = amu
           endif
+          allocate(mm(nstates,nstates))
           CALL MatrixMMGenerator_neqZ(dTdXi,dRdXi,eigval,nkap,vmat,
      &    wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
      &    d_number_states_mj)
           deallocate(d_number_states_mj)
-          write(*,*) 'EXIT MAIN MATRIX'
         else
-          write(*,*) 'ENTER MAIN MATRIX'
           if(b_ImpactParam .gt. 0.d0)then
             allocate(d_number_states_mj_even(2*n_jstates*nste))
-            allocate(eigval_e(2*n_jstates*nste)
+            allocate(eigval_e(2*n_jstates*nste))
             allocate(wave_new_even(2*n_jstates*nste,2*nm,-nkap:nkap))
             call redifineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
      &      wave_new_even,wave_new_even_mj,d_number_states_mj_even,nste,
@@ -544,24 +538,31 @@ c      the dv/dr terms required for the CC matrix.
             deallocate(eigval_e_mj)
             deallocate(wave_new_even_mj)
             allocate(d_number_states_mj_odd(2*n_jstates*nsto))
-            allocate(eigval_o(2*n_jstates*nsto)
+            allocate(eigval_o(2*n_jstates*nsto))
             allocate(wave_new_odd(2*n_jstates*nsto,2*nm,-nkap:nkap))
             call redifineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
      &      wave_new_odd,wave_new_odd_mj,d_number_states_mj_odd,nsto,
      &      nm,nkap,d_mjMax)
             deallocate(eigval_o_mj)
             deallocate(wave_new_odd_mj)
+          else
+            allocate(d_number_states_mj_even(nste))
+            allocate(d_number_states_mj_odd(nsto))
+            d_number_states_mj_even = amu
+            d_number_states_mj_odd = amu
           endif
+          allocate(mmeven(nste,nste))
           CALL MatrixMMGenerator_eqZeven(dTdXi,dRdXi,eigval_e,nkap,
      &    vmat,wave_new_even,nste,nm,nvmat,mmeven,dvdRmatdkb1,
      &    dvdRmatdkb2,d_number_states_mj_even)
           deallocate(d_number_states_mj_even)
+          allocate(mmodd(nsto,nsto))
           CALL MatrixMMGenerator_eqZodd(dTdXi,dRdXi,eigval_o,nkap,
      &    vmat,wave_new_odd,nsto,nm,nvmat,mmodd,dvdRmatdkb1,
      &    dvdRmatdkb2,d_number_states_mj_odd)
           deallocate(d_number_states_mj_odd)
-          write(*,*) 'EXIT MAIN MATRIX'
         endif
+        write(*,*) 'EXIT MAIN MATRIX'
 
         deallocate(dvdRmatdkb1)
         deallocate(dvdRmatdkb2)
@@ -587,24 +588,12 @@ c      the dv/dr terms required for the CC matrix.
         allocate(bb(nstates,nstates))
         bb=0.d0
         if(z_nuc1.eq.z_nuc2)then
-          do i=1,nste
-            do j=1,nste
-              bb(i,j)=mmeven(i,j)
-            enddo
-          enddo
+          bb(1:nste,1:nste)=mmeven
           deallocate(mmeven)
-          do i=1,nsto
-            do j=1,nsto
-              bb(i+nste,j+nste)=mmodd(i,j)
-            enddo
-          enddo
+          bb(1+nste:,1+nste:)=mmodd(i,j)
           deallocate(mmodd)
         else
-          do i=1,nstates
-            do j=1,nstates
-              bb(i,j)=mm(i,j)
-            enddo
-          enddo
+          bb=mm
           deallocate(mm)
         endif
 
@@ -622,8 +611,8 @@ c      the dv/dr terms required for the CC matrix.
         write(*,*) 'ALLOCATING TIME DEPENDENT MATRICES'
         allocate(aaeigval(nstates))
         allocate(aaeigvecr(nstates,nstates))
-         aaeigval=0.d0
-         aaeigvecr=0.d0
+        aaeigval=0.d0
+        aaeigvecr=0.d0
         allocate(pp(nstates,nstates))
         allocate(dd(nstates,nstates))
         allocate(ddmatnorm(nstates))
@@ -634,15 +623,19 @@ c      the dv/dr terms required for the CC matrix.
         pp=0.d0
         do i=1,nstates
           do j=1,nstates
-            summe=0.d0
-            do k=1,nstates
-              if(i.eq.k)then
-                summe=summe+
-     &          cdexp(aaeigval(i)*(0,-1)*step_faktor)*
-     &          dconjg(aaeigvecr(j,k))
-              endif
-            enddo
-            pp(i,j)=summe
+            k=i
+            pp(i,j)=cdexp(aaeigval(i)*(0,-1)*step_faktor)*
+     &              dconjg(aaeigvecr(j,k))
+!            summe=0.d0
+!            k=i
+!            do k=1,nstates
+!              if(i.eq.k)then
+!                summe=summe+
+!     &          cdexp(aaeigval(i)*(0,-1)*step_faktor)*
+!     &          dconjg(aaeigvecr(j,k))
+!              endif
+!            enddo
+!            pp(i,j)=summe
           enddo
         enddo
         deallocate(aaeigval)

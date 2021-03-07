@@ -1,4 +1,4 @@
-c     This subroutine calculates the wave functions and energies
+!     This subroutine calculates the wave functions and energies
 
       subroutine b_spline_calculation(nstates,nsto,nste,
      &nm,nu,nkap,number_states,rmin,rmax,wave1,vmat,nvmat,
@@ -614,34 +614,8 @@ c I am guessing that wave is vector v in eq 16 of Johnson
       return
       end
 
-c      subroutine store_new_wave(nm,nstates,nkap,num_st,wave,
-c     &     eigvec,wave_new)
-c      implicit real*8(a-h,o-z)
-c      real*8 wave(2*nm,2*nm,-nkap:nkap),eigvec(nstates,nstates),
-c     &     wave_new(nstates,2*nm,-nkap:nkap)
-c      integer num_st(-nkap:nkap,2*nm)
-c      integer kappa(nstates)
-
-c      wave_new=0.d0
-c      do num=1,nstates
-c         do kap=-nkap,nkap
-c            do mon=1,2*nm
-c               num_mon=num_st(kap,mon)
-c               if(num_mon.ne.0)then
-c                  do nbs=1,2*nm
-c                     wave_new(num,nbs,kap)=wave_new(num,nbs,kap)+
-c     &                    eigvec(num_mon,num)*wave(nbs,mon,kap)
-c                  enddo
-c               endif
-c            enddo
-c         enddo
-c      enddo
-
-c      return
-c      end
-
-      subroutine store_new_wave(nm,nstates,nkap,num_st,wave,
-     &eigvec,wave_new)
+      subroutine store_new_wave(nm,nstates,nkap,num_st,wave,eigvec,
+     &wave_new)
       include 'inc.par'
       real*8 wave(2*nm,2*nm,-nkap:nkap)
       real*8 eigvec(nstates,nstates),
@@ -2479,8 +2453,7 @@ c               endif
       real*8, dimension(:,:,:),allocatable:: div1,div2,v,
      &v_2,dvd,dv_1,dvb,v2
       real*8, dimension(:,:,:,:),allocatable:: v_22b,v_22d
-      real*8, dimension(:,:,:,:,:),allocatable:: v_22smalla,
-     &v_22smallb
+      real*8, dimension(:,:,:,:,:),allocatable::v_22smalla,v_22smallb
       real*8 ro(ns),ro1(ns),ro2a(ns)
       real*8 wave1(2*nm,2*nm,-nkap:nkap),
      &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),t(nu),
@@ -2536,10 +2509,8 @@ c      allocate(b2(nm+2,nm+2,0:2*nkap))
         allocate(v_2(nm+2,nm+2,0:2*nkap))
         allocate(v_22b(-nkap:nkap,nm+2,nm+2,0:2*nkap))
         allocate(v_22d(-nkap:nkap,nm+2,nm+2,0:2*nkap))
-        allocate(v_22smalla(-nkap:nkap,-nkap:nkap,nm+2,
-     &  nm+2,0:2*nkap))
-        allocate(v_22smallb(-nkap:nkap,-nkap:nkap,nm+2,
-     &  nm+2,0:2*nkap))
+        allocate(v_22smalla(-nkap:nkap,-nkap:nkap,nm+2,nm+2,0:2*nkap))
+        allocate(v_22smallb(-nkap:nkap,-nkap:nkap,nm+2,nm+2,0:2*nkap))
         allocate(dvd(nm+2,nm+2,0:2*nkap))
         allocate(dv_1(nm+2,nm+2,0:2*nkap))
         allocate(dvb(nm+2,nm+2,0:2*nkap))
@@ -3028,6 +2999,9 @@ c I am guessing that wave is vector v in eq 16 of Johnson
       real*8 wave(2*nm,2*nm,-nkap:nkap),vmat(nm,nm,0:2*nkap,nvmat),
      &e(2*nm,-nkap:nkap),rmin,rmax,eigval(nstates),
      &wave_new(nstates,2*nm,-nkap:nkap)
+      real*8, dimension(:,:,:),allocatable:: ang
+      integer, dimension(:,:), allocatable:: num_st
+      real*8, dimension(:,:), allocatable:: amat, eigvec
       character*1 char_even_odd_normal
 
       char_even_odd_normal = 'a'

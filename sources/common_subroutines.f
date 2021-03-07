@@ -362,22 +362,22 @@ c
       call factor()
 
       call DiracAngularl(dble(k1),l_1)
-      j_1=dabs(k1)-0.5d0
+      j_1=dabs(dble(k1))-0.5d0
       call DiracAngularl(dble(k2),l_2)
-      j_2=dabs(k2)-0.5d0
+      j_2=dabs(dble(k2))-0.5d0
 
       BigL=dble(ll)
       coeffMakerExplicit=Clebsh(l_1,d_m1-0.5d0,0.5d0,0.5d0,j_1,d_m1)*
      &Clebsh(l_2,d_m2-0.5d0,0.5d0,0.5d0,j_2,d_m2)*
-     &Clebsch(l_1,d_m1-0.5d0,BigL,0.d0,l2,d_m2-0.5d0)
+     &Clebsh(l_1,d_m1-0.5d0,BigL,0.d0,l_2,d_m2-0.5d0)
       coeffMakerExplicit=coeffMakerExplicit+
      &Clebsh(l_1,d_m1+0.5d0,0.5d0,-0.5d0,j_1,d_m1)*
      &Clebsh(l_2,d_m2+0.5d0,0.5d0,-0.5d0,j_2,d_m2)*
-     &Clebsch(l_1,d_m1+0.5d0,BigL,0.d0,l2,d_m2+0.5d0)
+     &Clebsh(l_1,d_m1+0.5d0,BigL,0.d0,l_2,d_m2+0.5d0)
       coeffMakerExplicit=coeffMakerExplicit*sqrt(2.d0*l_1+1.d0)/
      &sqrt(2.d0*l_2+1.d0)
       coeffMakerExplicit=coeffMakerExplicit*
-     &Clebsch(l_1,0.d0,BigL,0.d0,l_2)
+     &Clebsh(l_1,0.d0,BigL,0.d0,l_2,0.d0)
       if(dabs(coeffMakerExplicit).lt. 1.d-12)coeffMakerExplicit=0.d0
       return
       end function coeffMakerExplicit
@@ -667,7 +667,7 @@ C     When mu2=mu1-1
 
       if(k.gt.0)then
         L=k
-      elseif(k.lt.0)then
+      else if(k.lt.0)then
         L=-k-1
       else
         L=0
@@ -699,7 +699,7 @@ c the value of angular momentum l
 c write(*,*) 'Enter the value of kappa'
 c read(*,*) kappa
 c Definition of L from kappa
-      J=abs(kppa)*1.d0-0.5d0
+      J=dabs(kppa)*1.d0-0.5d0
 c write(*,*) L
       return
       end
@@ -2841,7 +2841,7 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
      &wave_new(nstates,2*nm,-nkap:nkap),
      &dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
-     &d_number_states_mj(n_states)
+     &d_number_states_mj(nstates)
       complex*16 mm(nstates,nstates)
       common /common_dkb/ dkb
       logical dkb
@@ -9928,6 +9928,7 @@ c              df_sum_old(iii)=df_storage
 
       subroutine redifineEigvalWaveNew(n_jstates,eigval,eigval_mj,
      &wave_new,wave_new_mj,d_number_states_mj,nstates,nm,nkap,d_mjMax)
+      include 'inc.par'
       real*8 eigval(2*n_jstates*nstates),eigval_mj(nstates,-n_jstates:
      &n_jstates),
      &wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap),
@@ -9941,7 +9942,7 @@ c              df_sum_old(iii)=df_storage
      &    -d_mjMax+dble(i_count)
           eigval((i_count*nstates+1):(i_count+1)*nstates) =
      &    eigval_mj(:,n_jstate)
-          wave_new((i_count*nstates+1):(i_count+1)*nstates,2*nm,
+          wave_new((i_count*nstates+1):(i_count+1)*nstates,:,
      &    -nkap:nkap) = wave_new_mj(:,:,:,n_jstate)
           i_count = i_count + 1
         endif
