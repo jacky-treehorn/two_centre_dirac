@@ -6535,7 +6535,8 @@ c       endif
       end
 
       subroutine Rotating_INaxis(nstates,nm,nkap,dthetadt,
-     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
+     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax, d_number_states_mj,
+     &n_jstates)
       include 'inc.par'
       complex*16 bb_mjj(nsts,nsts)
       real*8 dmat(2*nm,2*nm),alt_dmat(2*nm,2*nm,-nkap:nkap),
@@ -6545,6 +6546,7 @@ c       endif
      & shifted_norm_minus
       common /common_dkb/ dkb
       logical dkb
+     &real*8 d_number_states_mj(2*n_jstates*nstates)
 
       mj_max=nint(d_mjMax+0.5d0)
 
@@ -6635,7 +6637,11 @@ c       endif
       deallocate(norm_mat)
 
       j_start=1
+      i_count=0
       do mj1=-mj_max,mj_max-1
+        d_number_states_mj((i_count*nstates+1):(i_count+1)*nstates) =
+     &  -d_mjMax+dble(i_count)
+        i_count = i_count + 1
         i_col=1
         do mj2=-mj_max,mj_max-1
           do i=1,nstates
@@ -6653,7 +6659,6 @@ c       endif
       enddo
 
       bb_mjj=bb_mjj*(0,-1)*dthetadt
-
       deallocate(shifted_norm_minus)
       deallocate(shifted_norm_plus)
 
@@ -6661,7 +6666,8 @@ c       endif
       end
 
       subroutine Rotating_INaxis_even(nstates,nm,nkap,dthetadt,
-     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
+     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax,d_number_states_mj,
+     &n_jstates)
       include 'inc.par'
       complex*16 bb_mjj(nsts,nsts)
       real*8 dmat(2*nm,2*nm),alt_dmat(2*nm,2*nm,-nkap:nkap),
@@ -6671,6 +6677,7 @@ c       endif
      &shifted_norm_minus
       common /common_dkb/ dkb
       logical dkb
+     &real*8 d_number_states_mj(2*n_jstates*nstates)
 
       mj_max=nint(d_mjMax+0.5d0)
 
@@ -6767,7 +6774,11 @@ c       endif
 
 
       i_col=1
+      i_count=0
       do mj1=-mj_max,mj_max-1
+        d_number_states_mj((i_count*nstates+1):(i_count+1)*nstates) =
+     &  -d_mjMax+dble(i_count)
+        i_count = i_count + 1
         do i=1,nstates
           j_row=1
           do mj2=-mj_max,mj_max-1
@@ -6808,7 +6819,8 @@ c       endif
       end
 
       subroutine Rotating_INaxis_odd(nstates,nm,nkap,dthetadt,
-     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
+     &nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax,d_number_states_mj,
+     &n_jstates)
       include 'inc.par'
       complex*16 bb_mjj(nsts,nsts)
       real*8 dmat(2*nm,2*nm),alt_dmat(2*nm,2*nm,-nkap:nkap),
@@ -6818,6 +6830,7 @@ c       endif
      &shifted_norm_minus
       common /common_dkb/ dkb
       logical dkb
+     &real*8 d_number_states_mj(2*n_jstates*nstates)
 
       mj_max=nint(d_mjMax+0.5d0)
 
@@ -6913,7 +6926,11 @@ c       endif
       deallocate(norm_mat)
 
       j_start=1
+      i_count=0
       do mj1=-mj_max,mj_max-1
+        d_number_states_mj((i_count*nstates+1):(i_count+1)*nstates) =
+     &  -d_mjMax+dble(i_count)
+        i_count = i_count + 1
         i_col=1
         do mj2=-mj_max,mj_max-1
           do i=1,nstates
@@ -9945,25 +9962,20 @@ c              df_sum_old(iii)=df_storage
       return
       end
 
-      subroutine redifineEigvalWaveNew(n_jstates,eigval,eigval_mj,
-     &wave_new,wave_new_mj,d_number_states_mj,nstates,nm,nkap,d_mjMax)
+      subroutine redefineEigvalWaveNew(n_jstates,eigval,eigval_mj,
+     &wave_new,wave_new_mj,nstates,nm,nkap,d_mjMax)
       include 'inc.par'
       real*8 eigval(2*n_jstates*nstates),eigval_mj(nstates,-n_jstates:
      &n_jstates),
      &wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap),
-     &wave_new_mj(nstates,2*nm,-nkap:nkap,-n_jstates:n_jstates),
-     &d_number_states_mj(2*n_jstates*nstates)
+     &wave_new_mj(nstates,2*nm,-nkap:nkap,-n_jstates:n_jstates)
 
-      i_count = 0
       do n_jstate=-n_jstates,n_jstates
         if (n_jstate .ne. 0)then
-          d_number_states_mj((i_count*nstates+1):(i_count+1)*nstates) =
-     &    -d_mjMax+dble(i_count)
           eigval((i_count*nstates+1):(i_count+1)*nstates) =
      &    eigval_mj(:,n_jstate)
           wave_new((i_count*nstates+1):(i_count+1)*nstates,:,
      &    -nkap:nkap) = wave_new_mj(:,:,:,n_jstate)
-          i_count = i_count + 1
         endif
       enddo
       nstates = 2*n_jstates*nstates

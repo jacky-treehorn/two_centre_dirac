@@ -443,8 +443,8 @@ c      the dv/dr terms required for the CC matrix.
             allocate(wave_new(nstates,2*nm,-nkap:nkap))
             i_even_odd_normal = 0
             call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
-     &vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,wave_new,
-     &i_even_odd_normal)
+     &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,
+     &      wave_new,i_even_odd_normal)
             if(b_ImpactParam .gt. 0.d0)then
               amu=amu-1.d0
               amj_max=amj_max-1.d0
@@ -455,9 +455,21 @@ c      the dv/dr terms required for the CC matrix.
               deallocate(eigval)
               nsts=2*n_jstates*nstates
               allocate(bb_mjj(nsts,nsts))
+              allocate(d_number_states_mj(2*n_jstates*nstates))
               call Rotating_INaxis(nstates,nm,nkap,dthetadt,
-     &        nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax)
+     &        nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax,
+     &        d_number_states_mj,n_jstates)
               deallocate(wave_new)
+              ! Expand the size of eigval and wavenew
+              allocate(eigval(2*n_jstates*nstates))
+              allocate(wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap))
+              call redefineEigvalWaveNew(n_jstates,eigval,eigval_mj,
+     &        wave_new,wave_new_mj,nstates,nm,nkap,d_mjMax)
+              deallocate(eigval_mj)
+              deallocate(wave_new_mj)
+            else
+              allocate(d_number_states_mj(nstates))
+              d_number_states_mj = amu
             endif
           enddo
         else
@@ -499,21 +511,42 @@ c      the dv/dr terms required for the CC matrix.
               deallocate(eigval_o)
               nsts=2*n_jstates*nste
               allocate(bb_mjj_even(nsts,nsts))
+              allocate(d_number_states_mj_even(2*n_jstates*nste))
               call Rotating_INaxis_even(nste,nm,nkap,dthetadt,
-     &        nsts,bb_mjj_even,dmat,alt_dmat,wave_new_even,d_mjMax)
+     &        nsts,bb_mjj_even,dmat,alt_dmat,wave_new_even,d_mjMax,
+     &        d_number_states_mj_even,n_jstates)
               nsts=2*n_jstates*nsto
               allocate(bb_mjj_odd(nsts,nsts))
+              allocate(d_number_states_mj_odd(2*n_jstates*nsto))
               call Rotating_INaxis_odd(nsto,nm,nkap,dthetadt,
-     &        nsts,bb_mjj_odd,dmat,alt_dmat,wave_new_odd,d_mjMax)
+     &        nsts,bb_mjj_odd,dmat,alt_dmat,wave_new_odd,d_mjMax,
+     &        d_number_states_mj_odd,n_jstates)
               deallocate(wave_new_even)
               deallocate(wave_new_odd)
+              allocate(eigval_e(2*n_jstates*nste))
+              allocate(wave_new_even(2*n_jstates*nste,2*nm,-nkap:nkap))
+              call redefineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
+       &      wave_new_even,wave_new_even_mj,nste,nm,nkap,d_mjMax)
+              deallocate(eigval_e_mj)
+              deallocate(wave_new_even_mj)
+              allocate(eigval_o(2*n_jstates*nsto))
+              allocate(wave_new_odd(2*n_jstates*nsto,2*nm,-nkap:nkap))
+              call redefineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
+       &      wave_new_odd,wave_new_odd_mj,nsto,nm,nkap,d_mjMax)
+              deallocate(eigval_o_mj)
+              deallocate(wave_new_odd_mj)
+            else
+              allocate(d_number_states_mj_even(nste))
+              allocate(d_number_states_mj_odd(nsto))
+              d_number_states_mj_even = amu
+              d_number_states_mj_odd = amu
             endif
           enddo
         endif
 
         if(b_ImpactParam .gt. 0.d0)then
           amu=d_amuOrig
-          amj_mnax=d_amjmaxOrig
+          amj_max=d_amjmaxOrig
         endif
         deallocate(number_states)
         deallocate(wave)
@@ -521,20 +554,6 @@ c      the dv/dr terms required for the CC matrix.
 
         write(*,*) 'ENTER MAIN MATRIX'
         if(z_nuc1.ne.z_nuc2)then
-          if(b_ImpactParam .gt. 0.d0)then
-            allocate(d_number_states_mj(2*n_jstates*nstates))
-          ! Expand the size of eigval and wavenew
-            allocate(eigval(2*n_jstates*nstates))
-            allocate(wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap))
-            call redifineEigvalWaveNew(n_jstates,eigval,eigval_mj,
-     &      wave_new,wave_new_mj,d_number_states_mj,nstates,nm,nkap,
-     &      d_mjMax)
-            deallocate(eigval_mj)
-            deallocate(wave_new_mj)
-          else
-            allocate(d_number_states_mj(nstates))
-            d_number_states_mj = amu
-          endif
           allocate(mm(nstates,nstates))
           CALL MatrixMMGenerator_neqZ(dTdXi,dRdXi,eigval,nkap,vmat,
      &    wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
@@ -545,29 +564,6 @@ c      the dv/dr terms required for the CC matrix.
             deallocate(bb_mjj)
           endif
         else
-          if(b_ImpactParam .gt. 0.d0)then
-            allocate(d_number_states_mj_even(2*n_jstates*nste))
-            allocate(eigval_e(2*n_jstates*nste))
-            allocate(wave_new_even(2*n_jstates*nste,2*nm,-nkap:nkap))
-            call redifineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
-     &      wave_new_even,wave_new_even_mj,d_number_states_mj_even,nste,
-     &      nm,nkap,d_mjMax)
-            deallocate(eigval_e_mj)
-            deallocate(wave_new_even_mj)
-            allocate(d_number_states_mj_odd(2*n_jstates*nsto))
-            allocate(eigval_o(2*n_jstates*nsto))
-            allocate(wave_new_odd(2*n_jstates*nsto,2*nm,-nkap:nkap))
-            call redifineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
-     &      wave_new_odd,wave_new_odd_mj,d_number_states_mj_odd,nsto,
-     &      nm,nkap,d_mjMax)
-            deallocate(eigval_o_mj)
-            deallocate(wave_new_odd_mj)
-          else
-            allocate(d_number_states_mj_even(nste))
-            allocate(d_number_states_mj_odd(nsto))
-            d_number_states_mj_even = amu
-            d_number_states_mj_odd = amu
-          endif
           allocate(mmeven(nste,nste))
           CALL MatrixMMGenerator_eqZeven(dTdXi,dRdXi,eigval_e,nkap,
      &    vmat,wave_new_even,nste,nm,nvmat,mmeven,dvdRmatdkb1,
