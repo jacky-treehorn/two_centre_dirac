@@ -9986,19 +9986,21 @@ c              df_sum_old(iii)=df_storage
       end
 
       subroutine redefineEigvalWaveNew(n_jstates,eigval,eigval_mj,
-     &wave_new,wave_new_mj,nstates,nm,nkap,d_mjMax)
+     &wave_new,wave_new_mj,nstates,nm,nkap)
       include 'inc.par'
       real*8 eigval(2*n_jstates*nstates),eigval_mj(nstates,-n_jstates:
      &n_jstates),
      &wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap),
      &wave_new_mj(nstates,2*nm,-nkap:nkap,-n_jstates:n_jstates)
 
+      i_count = 0
       do n_jstate=-n_jstates,n_jstates
         if (n_jstate .ne. 0)then
           eigval((i_count*nstates+1):(i_count+1)*nstates) =
      &    eigval_mj(:,n_jstate)
           wave_new((i_count*nstates+1):(i_count+1)*nstates,:,
      &    -nkap:nkap) = wave_new_mj(:,:,:,n_jstate)
+          i_count = i_count+1
         endif
       enddo
       nstates = 2*n_jstates*nstates

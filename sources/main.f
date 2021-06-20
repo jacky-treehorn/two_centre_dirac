@@ -21,7 +21,7 @@ c     must be constant there)
       common /step_progress/ xi_stepslower,xi_stepsupper,ii_xi
       common /recoil/ Recoil_on_off
       common /neg_cont/ Manual_ncont_states
-      real*8, dimension(:),allocatable:: tknot,eigval,eigval_e,eigval_o,
+      real*8, dimension(:),allocatable:: eigval,eigval_e,eigval_o,
      &aaeigval,d_number_states_mj,d_number_states_mj_even,
      &d_number_states_mj_odd
       real*8, dimension(:,:),allocatable:: e,dmat,
@@ -444,40 +444,28 @@ c         Does anything in here depend on xi? Only up_energy changes.
           allocate(wave_new_mj(nstates,2*nm,-nkap:nkap,
      &    -n_jstates:n_jstates))
           wave_new_mj=0.d0
-          do n_jstate=n_jstates,1,-1
-            allocate(eigval(nstates))
-            allocate(wave_new(nstates,2*nm,-nkap:nkap))
-            i_even_odd_normal = 0
-            call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
-     &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,
-     &      wave_new,i_even_odd_normal)
-            if(b_ImpactParam .gt. 0.d0)then
+          allocate(eigval(nstates))
+          allocate(wave_new(nstates,2*nm,-nkap:nkap))
+          i_even_odd_normal = 0
+          call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
+     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,
+     &    wave_new,i_even_odd_normal)
+          if(b_ImpactParam .gt. 0.d0)then
+            do n_jstate=n_jstates,1,-1
               amu=amu-1.d0
               amj_max=amj_max-1.d0
               eigval_mj(:,n_jstate)=eigval
               eigval_mj(:,-n_jstate)=eigval
               wave_new_mj(:,:,:,n_jstate)=wave_new
               wave_new_mj(:,:,:,-n_jstate)=wave_new
-              deallocate(eigval)
-              nsts=2*n_jstates*nstates
-              allocate(bb_mjj(nsts,nsts))
-              allocate(d_number_states_mj(2*n_jstates*nstates))
-              call Rotating_INaxis(nstates,nm,nkap,dthetadt,
-     &        nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax,
-     &        d_number_states_mj,n_jstates)
-              deallocate(wave_new)
-              ! Expand the size of eigval and wavenew
-              allocate(eigval(2*n_jstates*nstates))
-              allocate(wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap))
-              call redefineEigvalWaveNew(n_jstates,eigval,eigval_mj,
-     &        wave_new,wave_new_mj,nstates,nm,nkap,d_mjMax)
-              deallocate(eigval_mj)
-              deallocate(wave_new_mj)
-            else
-              allocate(d_number_states_mj(nstates))
-              d_number_states_mj = amu
-            endif
-          enddo
+            enddo
+            nsts=2*n_jstates*nstates
+            allocate(bb_mjj(nsts,nsts))
+            allocate(d_number_states_mj(2*n_jstates*nstates))
+            call Rotating_INaxis(nstates,nm,nkap,dthetadt,
+     &      nsts,bb_mjj,dmat,alt_dmat,wave_new,d_mjMax,
+     &      d_number_states_mj,n_jstates)
+          endif
         else
           allocate(eigval_e_mj(nste,-n_jstates:n_jstates))
           eigval_e_mj=0.d0
@@ -489,20 +477,20 @@ c         Does anything in here depend on xi? Only up_energy changes.
           allocate(wave_new_odd_mj(nste,2*nm,-nkap:nkap,
      &    -n_jstates:n_jstates))
           wave_new_odd_mj=0.d0
-          do n_jstate=n_jstates,1,-1
-            allocate(eigval_e(nste))
-            allocate(wave_new_even(nste,2*nm,-nkap:nkap))
-            i_even_odd_normal = 1
-            call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
-     &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
-     &      wave_new_even,i_even_odd_normal)
-            allocate(eigval_o(nsto))
-            allocate(wave_new_odd(nsto,2*nm,-nkap:nkap))
-            i_even_odd_normal = 2
-            call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
-     &      vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
-     &      wave_new_odd,i_even_odd_normal)
-            if(b_ImpactParam .gt. 0.d0)then
+          allocate(eigval_o(nsto))
+          allocate(eigval_e(nste))
+          allocate(wave_new_even(nste,2*nm,-nkap:nkap))
+          allocate(wave_new_odd(nsto,2*nm,-nkap:nkap))
+          i_even_odd_normal = 1
+          call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
+     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
+     &    wave_new_even,i_even_odd_normal)
+          i_even_odd_normal = 2
+          call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
+     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
+     &    wave_new_odd,i_even_odd_normal)
+          if(b_ImpactParam .gt. 0.d0)then
+            do n_jstate=n_jstates,1,-1
               amu=amu-1.d0
               amj_max=amj_max-1.d0
               eigval_e_mj(:,n_jstate)=eigval_e
@@ -513,41 +501,20 @@ c         Does anything in here depend on xi? Only up_energy changes.
               wave_new_even_mj(:,:,:,-n_jstate)=wave_new_even
               wave_new_odd_mj(:,:,:,n_jstate)=wave_odd_even
               wave_new_odd_mj(:,:,:,-n_jstate)=wave_odd_even
-              deallocate(eigval_e)
-              deallocate(eigval_o)
-              nsts=2*n_jstates*nste
-              allocate(bb_mjj_even(nsts,nsts))
-              allocate(d_number_states_mj_even(2*n_jstates*nste))
-              call Rotating_INaxis_even(nste,nm,nkap,dthetadt,
-     &        nsts,bb_mjj_even,dmat,alt_dmat,wave_new_even,d_mjMax,
-     &        d_number_states_mj_even,n_jstates)
-              nsts=2*n_jstates*nsto
-              allocate(bb_mjj_odd(nsts,nsts))
-              allocate(d_number_states_mj_odd(2*n_jstates*nsto))
-              call Rotating_INaxis_odd(nsto,nm,nkap,dthetadt,
-     &        nsts,bb_mjj_odd,dmat,alt_dmat,wave_new_odd,d_mjMax,
-     &        d_number_states_mj_odd,n_jstates)
-              deallocate(wave_new_even)
-              deallocate(wave_new_odd)
-              allocate(eigval_e(2*n_jstates*nste))
-              allocate(wave_new_even(2*n_jstates*nste,2*nm,-nkap:nkap))
-              call redefineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
-     &        wave_new_even,wave_new_even_mj,nste,nm,nkap,d_mjMax)
-              deallocate(eigval_e_mj)
-              deallocate(wave_new_even_mj)
-              allocate(eigval_o(2*n_jstates*nsto))
-              allocate(wave_new_odd(2*n_jstates*nsto,2*nm,-nkap:nkap))
-              call redefineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
-     &        wave_new_odd,wave_new_odd_mj,nsto,nm,nkap,d_mjMax)
-              deallocate(eigval_o_mj)
-              deallocate(wave_new_odd_mj)
-            else
-              allocate(d_number_states_mj_even(nste))
-              allocate(d_number_states_mj_odd(nsto))
-              d_number_states_mj_even = amu
-              d_number_states_mj_odd = amu
-            endif
-          enddo
+            enddo
+            nsts=2*n_jstates*nste
+            allocate(bb_mjj_even(nsts,nsts))
+            allocate(d_number_states_mj_even(2*n_jstates*nste))
+            call Rotating_INaxis_even(nste,nm,nkap,dthetadt,
+     &      nsts,bb_mjj_even,dmat,alt_dmat,wave_new_even,d_mjMax,
+     &      d_number_states_mj_even,n_jstates)
+            nsts=2*n_jstates*nsto
+            allocate(bb_mjj_odd(nsts,nsts))
+            allocate(d_number_states_mj_odd(2*n_jstates*nsto))
+            call Rotating_INaxis_odd(nsto,nm,nkap,dthetadt,
+     &      nsts,bb_mjj_odd,dmat,alt_dmat,wave_new_odd,d_mjMax,
+     &      d_number_states_mj_odd,n_jstates)
+          endif
         endif
 
         if(b_ImpactParam .gt. 0.d0)then
@@ -560,6 +527,21 @@ c         Does anything in here depend on xi? Only up_energy changes.
 
         write(*,*) 'ENTER MAIN MATRIX'
         if(z_nuc1.ne.z_nuc2)then
+          if (b_ImpactParam .gt. 0.d0)then
+            ! Expand the size of eigval and wavenew
+            deallocate(eigval)
+            deallocate(wave_new)
+            allocate(eigval(2*n_jstates*nstates))
+            allocate(wave_new(2*n_jstates*nstates,2*nm,-nkap:nkap))
+C           This function redefines nstates=2*n_jstates*nstates
+            call redefineEigvalWaveNew(n_jstates,eigval,eigval_mj,
+     &      wave_new,wave_new_mj,nstates,nm,nkap)
+            deallocate(eigval_mj)
+            deallocate(wave_new_mj)
+          else
+            allocate(d_number_states_mj(nstates))
+            d_number_states_mj = amu
+          endif
           allocate(mm(nstates,nstates))
           CALL MatrixMMGenerator_neqZ(dTdXi,dRdXi,eigval,nkap,vmat,
      &    wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
@@ -570,6 +552,31 @@ c         Does anything in here depend on xi? Only up_energy changes.
             deallocate(bb_mjj)
           endif
         else
+          if (b_ImpactParam .gt. 0.d0)then
+            deallocate(eigval_e)
+            deallocate(wave_new_even)
+            allocate(eigval_e(2*n_jstates*nste))
+            allocate(wave_new_even(2*n_jstates*nste,2*nm,-nkap:nkap))
+C           This function redefines nste=2*n_jstates*nste
+            call redefineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
+     &      wave_new_even,wave_new_even_mj,nste,nm,nkap)
+            deallocate(eigval_e_mj)
+            deallocate(wave_new_even_mj)
+            deallocate(eigval_o)
+            deallocate(wave_new_odd)
+            allocate(eigval_o(2*n_jstates*nsto))
+            allocate(wave_new_odd(2*n_jstates*nsto,2*nm,-nkap:nkap))
+C           This function redefines nsto=2*n_jstates*nsto
+            call redefineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
+     &      wave_new_odd,wave_new_odd_mj,nsto,nm,nkap)
+            deallocate(eigval_o_mj)
+            deallocate(wave_new_odd_mj)
+          else
+            allocate(d_number_states_mj_even(nste))
+            allocate(d_number_states_mj_odd(nsto))
+            d_number_states_mj_even = amu
+            d_number_states_mj_odd = amu
+          endif
           allocate(mmeven(nste,nste))
           CALL MatrixMMGenerator_eqZeven(dTdXi,dRdXi,eigval_e,nkap,
      &    vmat,wave_new_even,nste,nm,nvmat,mmeven,dvdRmatdkb1,
@@ -613,7 +620,7 @@ c         Does anything in here depend on xi? Only up_energy changes.
         if(z_nuc1.eq.z_nuc2)then
           bb(1:nste,1:nste)=mmeven
           deallocate(mmeven)
-          bb(1+nste:,1+nste:)=mmodd(i,j)
+          bb(1+nste:,1+nste:)=mmodd
           deallocate(mmodd)
         else
           bb=mm
@@ -756,8 +763,8 @@ C             Fill the Dirac Sea completely.
           wave_new_prev = wave_new
         else
           energy_lowest_bound = eigval_e(lowest_bound_e)
-          if (eigval_o(lowest_bound_o) < energy_lowest_bound)then
-            energy_lowest_bound = eigval_o(lowest_bound_o)
+          if (eigval_o(lowest_bound_o - nste) < energy_lowest_bound)then
+            energy_lowest_bound = eigval_o(lowest_bound_o - nste)
           endif
           if ((energy_lowest_bound .lt. -1.d0) .and.
      &        .not.(dipping_wave_allocated)) then
