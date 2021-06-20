@@ -2831,11 +2831,11 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       return
       end
 
-      subroutine projection_matrix_multipole_frozen_basis(nstates,nm,
-     &nkap,ns,dmat,wave1,wave2,projMat)
+      subroutine projection_matrix_frozen_basis(nstates,nm,
+     &nkap,dmat,wave1,wave2,projMat)
       include 'inc.par'
       real*8 projMat(nstates,nstates),wave1(nstates,2*nm,-nkap:nkap),
-      wave2(nstates,2*nm,-nkap:nkap),dmat(2*nm,2*nm,-nkap:nkap)
+     &wave2(nstates,2*nm,-nkap:nkap),dmat(2*nm,2*nm,-nkap:nkap)
 
       projMat = 0.d0
       do i1 = 1,nstates
@@ -6569,7 +6569,7 @@ c       endif
      & shifted_norm_minus
       common /common_dkb/ dkb
       logical dkb
-     &real*8 d_number_states_mj(2*n_jstates*nstates)
+      real*8 d_number_states_mj(2*n_jstates*nstates)
 
       mj_max=nint(d_mjMax+0.5d0)
 
@@ -6700,7 +6700,7 @@ c       endif
      &shifted_norm_minus
       common /common_dkb/ dkb
       logical dkb
-     &real*8 d_number_states_mj(2*n_jstates*nstates)
+      real*8 d_number_states_mj(2*n_jstates*nstates)
 
       mj_max=nint(d_mjMax+0.5d0)
 
@@ -6853,7 +6853,7 @@ c       endif
      &shifted_norm_minus
       common /common_dkb/ dkb
       logical dkb
-     &real*8 d_number_states_mj(2*n_jstates*nstates)
+      real*8 d_number_states_mj(2*n_jstates*nstates)
 
       mj_max=nint(d_mjMax+0.5d0)
 

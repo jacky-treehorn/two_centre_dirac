@@ -2449,7 +2449,7 @@ c               endif
      &nm,nu,nkap,number_states,rmin,rmax,wave1,vmat,nvmat,
      &e,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,alternate_dmat)
       include 'inc.par'
-      real*8, dimension(:),allocatable:: u,cc
+      real*8, dimension(:),allocatable:: u,cc,t
       real*8, dimension(:,:),allocatable:: amat,wave,dmat,b,b_2,dd,d3
       real*8, dimension(:,:,:),allocatable:: div1,div2,v,
      &v_2,dvd,dv_1,dvb,v2
