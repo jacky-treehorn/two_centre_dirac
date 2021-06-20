@@ -25,9 +25,11 @@ c     must be constant there)
      &aaeigval,d_number_states_mj,d_number_states_mj_even,
      &d_number_states_mj_odd
       real*8, dimension(:,:),allocatable:: e,dmat,
-     &eigval_mj,eigval_e_mj,eigval_o_mj
-      real*8, dimension(:,:,:),allocatable:: wave,
-     &wave_new,wave_new_even,wave_new_odd,alt_dmat
+     &eigval_mj,eigval_e_mj,eigval_o_mj,projMatMultipole
+      real*8, dimension(:,:,:),allocatable:: wave,wave_new_at_dip,
+     &wave_new,wave_new_prev,wave_new_even,wave_new_even_prev,
+     &wave_new_at_dip_even,wave_new_odd,wave_new_odd_prev,
+     &wave_new_at_dip_odd,alt_dmat
       real*8, dimension(:,:,:,:),allocatable:: vmat,wave_new_mj,
      &wave_new_even_mj,wave_new_odd_mj
       real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1
@@ -37,8 +39,8 @@ c     must be constant there)
       complex*16, dimension(:,:),allocatable:: bb,dd,pp,
      &aaeigvecr,mm,mmeven,mmodd,bb_mjj,bb_mjj_even,bb_mjj_odd
       complex*16, dimension(:), allocatable :: ddmatnorm,coeff,
-     &coefffornorm!,coefffornorm_prev,coeff_prev
-      real*8 i_xi,i_xi_next,i_xi_prev
+     &coefffornorm!,coefffornorm_prev
+      real*8 i_xi,i_xi_next,i_xi_prev, energy_lowest_bound
       integer en_eval1,en_eval1j,xi_stepslower,xi_stepsupper,
      &c_ivalues(8)
       complex*16 summe
@@ -52,10 +54,14 @@ c     must be constant there)
       common /input_directory/ inp_dir
       logical Manual_Coeff_Input,dkb,Sudden_approx,
      &state_range_input,Plots_wanted,Recoil_on_off,
-     &init_recoil,Manual_ncont_states,mkdirs
+     &init_recoil,Manual_ncont_states,mkdirs,dipping_wave_found,
+     &unfreeze_basis
       inp_dir = 'input_output/'
       call factor()
 
+      dipping_wave_found = .false.
+      unfreeze_basis = .false.
+      energy_lowest_bound = 1.d0
       mkdirs=makedirqq('Coeffs')
       mkdirs=makedirqq('Mat_norms')
 
@@ -393,6 +399,7 @@ c      if(Nuc_model.gt.1) r0=r0*dsqrt(5.d0/3.d0)
 c      NOTE The allocation of vmat has been expanded. vmat is not only
 c     the v matrix from Johnson's paper, but also the nvmat'th vmat is
 c      the dv/dr terms required for the CC matrix.
+
         allocate(e(2*nm,-nkap:nkap))
         allocate(vmat(nm,nm,0:2*nkap,nvmat))
         allocate(dmat(2*nm,2*nm))
@@ -400,15 +407,15 @@ c      the dv/dr terms required for the CC matrix.
         allocate(dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2))
         allocate(number_states(2,-nkap:nkap))
         allocate(wave(2*nm,2*nm,-nkap:nkap))
-        allocate(tknot(nu))
         allocate(alt_dmat(2*nm,2*nm,-nkap:nkap))
 
         write(*,*) 'SIZE OF MATRIX',4*(nm**2)*(2*nkap+2)*8/1000000,'MB'
         write(*,*) 'ENTERING B_SPLINE_CALCULATION'
+c         Does anything in here depend on xi? Only up_energy changes.
         call b_spline_calculation_no_laser
-     &  (nstates,nsto,nste,nm,nu,nkap,number_states,rmin,rmax,
-     &  wave,vmat,nvmat,e,tknot,up_energy,dmat,
-     &  dvdRmatdkb1,dvdRmatdkb2,alt_dmat)
+     &    (nstates,nsto,nste,nm,nu,nkap,number_states,rmin,rmax,
+     &    wave,vmat,nvmat,e,up_energy,dmat,
+     &    dvdRmatdkb1,dvdRmatdkb2,alt_dmat)
         if(ii_xi.eq.xi_stepslower)then
           number_states_perm=number_states
           nstates_perm=nstates
@@ -419,7 +426,6 @@ c      the dv/dr terms required for the CC matrix.
         nstates=nstates_perm
         nste=nste_perm
         nsto=nsto_perm
-        deallocate(tknot)
 
         call sign_of_states_monopole(number_states,
      &  wave,nstates,nm,nkap,ii_xi,xi_stepslower,rmin,rmax,'a')
@@ -526,13 +532,13 @@ c      the dv/dr terms required for the CC matrix.
               allocate(eigval_e(2*n_jstates*nste))
               allocate(wave_new_even(2*n_jstates*nste,2*nm,-nkap:nkap))
               call redefineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
-       &      wave_new_even,wave_new_even_mj,nste,nm,nkap,d_mjMax)
+     &        wave_new_even,wave_new_even_mj,nste,nm,nkap,d_mjMax)
               deallocate(eigval_e_mj)
               deallocate(wave_new_even_mj)
               allocate(eigval_o(2*n_jstates*nsto))
               allocate(wave_new_odd(2*n_jstates*nsto,2*nm,-nkap:nkap))
               call redefineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
-       &      wave_new_odd,wave_new_odd_mj,nsto,nm,nkap,d_mjMax)
+     &        wave_new_odd,wave_new_odd_mj,nsto,nm,nkap,d_mjMax)
               deallocate(eigval_o_mj)
               deallocate(wave_new_odd_mj)
             else
@@ -590,10 +596,27 @@ c      the dv/dr terms required for the CC matrix.
         deallocate(vmat)
         if(z_nuc1.eq.z_nuc2)then
           nstates=nste+nsto
-          deallocate(wave_new_even)
-          deallocate(wave_new_odd)
-        else
-          deallocate(wave_new)
+        endif
+
+
+        if (energy_lowest_bound .gt. -1.d0 .and. dipping_wave_found)
+          unfreeze_basis = .true.
+        endif
+        if ((energy_lowest_bound .lt. -1.d0) .or. unfreeze_basis)
+          allocate(projMatMultipole(nstates,nstates))
+          if(z_nuc1.eq.z_nuc2)then
+            projection_matrix_multipole_frozen_basis(nstates,nm,
+     &      nkap,ns,alt_dmat,wave_new,wave_new_at_dip,projMatMultipole)
+          else
+            allocate(wave_even_odd_combined(2,nstates,2*nm,-nkap:nkap))
+            wave_even_odd_combined(1,1:nste,:,:) = wave_new_even
+            wave_even_odd_combined(1,1+nste:,:,:) = wave_new_odd
+            wave_even_odd_combined(2,1:nste,:,:) = wave_new_at_dip_even
+            wave_even_odd_combined(2,1+nste:,:,:) = wave_new_at_dip_odd
+            projection_matrix_multipole_frozen_basis(nstates,nm,
+     &      nkap,ns,alt_dmat,wave_even_odd_combined(1,:,:,:),
+     &      wave_even_odd_combined(2,:,:,:),projMatMultipole)
+            deallocate(wave_even_odd_combined)
         endif
 
         deallocate(dmat)
@@ -729,6 +752,23 @@ c      the dv/dr terms required for the CC matrix.
 !      coeff_prev=coeff
         endif
 
+C       Project forward to the moving basis
+        if ((energy_lowest_bound .lt. -1.d0 .and. dipping_wave_found)
+     &  .or. unfreeze_basis)then
+          if (unfreeze_basis)then
+            unfreeze_basis = .false.
+          endif
+          coefffornorm=0.d0
+          do i=1,nstates
+            summe=0.d0
+            do k=1,nstates
+              summe=summe+projMatMultipole(i,k)*coeff(k)
+            enddo
+            coefffornorm(i)=summe
+          enddo
+          deallocate(projMatMultipole)
+          coeff=coefffornorm
+        endif
 CC******THE FINAL STEP!!!!!!!!!!!!!!!!
         coefffornorm=0.d0
         do i=1,nstates
@@ -739,6 +779,19 @@ CC******THE FINAL STEP!!!!!!!!!!!!!!!!
           coefffornorm(i)=summe
         enddo
         coeff=coefffornorm
+C       Project back to the frozen basis
+        if (energy_lowest_bound .lt. -1.d0)then
+          coefffornorm=0.d0
+          do i=1,nstates
+            summe=0.d0
+            do k=1,nstates
+              summe=summe+projMatMultipole(i,k)*coeff(k)
+            enddo
+            coefffornorm(i)=summe
+          enddo
+          deallocate(projMatMultipole)
+          coeff=coefffornorm
+        endif
 c*******END OF THE FINAL STEP!!!!!!!!!!!
         if(z_nuc1.eq.z_nuc2)then
           write(*,*)cdabs(coeff(lowest_bound_e))**2,
@@ -867,7 +920,25 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
      &        cdabs(coeff(i))**2
             endif
           enddo
+          energy_lowest_bound = eigval(lowest_bound)
           deallocate(eigval)
+          if ((energy_lowest_bound .lt. -1.d0) .and.
+     &        .not.(dipping_wave_found)) then
+            dipping_wave_found = .true.
+            allocate(wave_new_at_dip(nstates,2*nm,-nkap:nkap))
+            wave_new_at_dip = wave_new_prev
+          endif
+          if ((energy_lowest_bound .gt. -1.d0) .and.
+     &        dipping_wave_found) then
+            deallocate(wave_new_at_dip)
+          endif
+          if (ii_xi.gt.xi_stepslower)then
+            deallocate(wave_new_prev)
+          endif
+          allocate(wave_new_prev(nstates,2*nm,-nkap:nkap))
+          allocate(coeff_prev(nstates))
+          wave_new_prev = wave_new
+          deallocate(wave_new)
         elseif(z_nuc1.eq.z_nuc2)then
           do i=1,nste
             if(eigval_e(i).gt. 1.d0)then
@@ -888,8 +959,35 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
      &        cdabs(coeff(i+nste))**2
             endif
           enddo
+          energy_lowest_bound = eigval_e(lowest_bound_e)
           deallocate(eigval_e)
+          if (eigval_o(lowest_bound_o) < energy_lowest_bound)then
+            energy_lowest_bound = eigval_o(lowest_bound_o)
+          endif
           deallocate(eigval_o)
+          if ((energy_lowest_bound .lt. -1.d0) .and.
+     &        .not.(dipping_wave_found)) then
+            dipping_wave_found = .true.
+            allocate(wave_new_at_dip_even(nste,2*nm,-nkap:nkap))
+            wave_new_at_dip_even = wave_new_even_prev
+            allocate(wave_new_at_dip_odd(nsto,2*nm,-nkap:nkap))
+            wave_new_at_dip_odd = wave_new_odd_prev
+          endif
+          if ((energy_lowest_bound .gt. -1.d0) .and.
+     &        dipping_wave_found) then
+            deallocate(wave_new_at_dip_even)
+            deallocate(wave_new_at_dip_odd)
+          endif
+          if (ii_xi.gt.xi_stepslower)then
+            deallocate(wave_new_even_prev)
+            deallocate(wave_new_odd_prev)
+          endif
+          allocate(wave_new_even_prev(nste,2*nm,-nkap:nkap))
+          allocate(wave_new_odd_prev(nsto,2*nm,-nkap:nkap))
+          wave_new_even_prev = wave_new_even
+          wave_new_odd_prev = wave_new_odd
+          deallocate(wave_new_even)
+          deallocate(wave_new_odd)
         endif
 
         if (ii_xi.ne. 0)then

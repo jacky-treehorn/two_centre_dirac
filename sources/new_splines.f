@@ -2,11 +2,11 @@
 
       subroutine b_spline_calculation(nstates,nsto,nste,
      &nm,nu,nkap,number_states,rmin,rmax,wave1,vmat,nvmat,
-     &e,t,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,
+     &e,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,
      &alternate_dmat,v2sbj1a,
      &v2sbj2a,v2sbj3a,v2sbj4a,wavenumb)
       include 'inc.par'
-      real*8, dimension(:),allocatable:: u,sbj,cc
+      real*8, dimension(:),allocatable:: u,sbj,cc,t
       real*8, dimension(:,:),allocatable:: amat,wave,dmat,b,b_2,dd,d3
       real*8, dimension(:,:,:),allocatable:: div1,div2,v,
      &v_2,dvd,dv_1,dvb,v2sbj1,v2
@@ -16,7 +16,7 @@
      &v_22smallb
       real*8 ro(ns),ro1(ns),ro2a(ns)
       real*8 wave1(2*nm,2*nm,-nkap:nkap),
-     &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),t(nu),
+     &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),
      &dmat1(2*nm,2*nm),dvdRmat_dkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
      &dvdRmat_dkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &alternate_dmat(2*nm,2*nm,-nkap:nkap),v2sbj1a(nm,nm,0:2*nkap),
@@ -138,7 +138,7 @@ c        v_22=0.d0, v_22 is set to zero elsewhere.
         dv_1=0.d0
         dvb=0.d0
       endif
-
+      allocate(t(nu))
       call spline_arranger(nu,rmin,rmax,t)
 
       if(z_nuc1.eq.z_nuc2)then
@@ -399,7 +399,7 @@ c      b2=0.d0
           endif
         enddo
       enddo
-
+      deallocate(t)
 
 
 c******* VERY IMPORTANT  ********
@@ -2078,16 +2078,16 @@ c               endif
       end
 
       subroutine b_spline_basis_only(nstates,nsto,nste,nm,nu,nkap,
-     &number_states,rmin,rmax,wave1,vmat,nvmat,e,t,up_energy,dmat1,
+     &number_states,rmin,rmax,wave1,vmat,nvmat,e,up_energy,dmat1,
      &alternate_dmat,distance)
       include 'inc.par'
-      real*8, dimension(:),allocatable:: u,cc
+      real*8, dimension(:),allocatable:: u,cc,t
       real*8, dimension(:,:),allocatable:: amat,wave,dmat,b,b_2,dd,d3
       real*8, dimension(:,:,:),allocatable:: div1,div2,v,v_2,dvd,
      &dv_1,dvb
       real*8 ro(ns),ro1(ns),ro2a(ns)
       real*8 wave1(2*nm,2*nm,-nkap:nkap),
-     &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),t(nu),
+     &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),
      &dmat1(2*nm,2*nm),alternate_dmat(2*nm,2*nm,-nkap:nkap),
      &ttt(nuz),www(nuz),el(2*nm)
       integer number_states(2,-nkap:nkap),One_s_state_location
@@ -2177,6 +2177,7 @@ c               endif
         dv_1=0.d0
         dvb=0.d0
       endif
+      allocate(t(nu))
       call spline_arranger(nu,rmin,rmax,t)
 
       istepforll=1
@@ -2276,7 +2277,7 @@ c               endif
           enddo
         enddo
       enddo
-
+      deallocate(t)
       if(dkb) then
         do i=1,nm
           do k=1,nm
@@ -2446,7 +2447,7 @@ c               endif
 
       subroutine b_spline_calculation_no_laser(nstates,nsto,nste,
      &nm,nu,nkap,number_states,rmin,rmax,wave1,vmat,nvmat,
-     &e,t,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,alternate_dmat)
+     &e,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,alternate_dmat)
       include 'inc.par'
       real*8, dimension(:),allocatable:: u,cc
       real*8, dimension(:,:),allocatable:: amat,wave,dmat,b,b_2,dd,d3
@@ -2456,7 +2457,7 @@ c               endif
       real*8, dimension(:,:,:,:,:),allocatable::v_22smalla,v_22smallb
       real*8 ro(ns),ro1(ns),ro2a(ns)
       real*8 wave1(2*nm,2*nm,-nkap:nkap),
-     &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),t(nu),
+     &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),
      &dmat1(2*nm,2*nm),dvdRmat_dkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
      &dvdRmat_dkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &alternate_dmat(2*nm,2*nm,-nkap:nkap)
@@ -2567,7 +2568,7 @@ c      v_22=0.d0, v_22 is set to zero elsewhere.
         dv_1=0.d0
         dvb=0.d0
       endif
-
+      allocate(t(nu))
       call spline_arranger(nu,rmin,rmax,t)
 
       if(z_nuc1.eq.z_nuc2)then
@@ -2787,7 +2788,7 @@ c similar to the above, yet somewhat altered.
           endif
         enddo
       enddo
-
+      deallocate(t)
 
 
 c******* VERY IMPORTANT  ********

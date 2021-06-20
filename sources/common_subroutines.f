@@ -2831,6 +2831,34 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       return
       end
 
+      subroutine projection_matrix_multipole_frozen_basis(nstates,nm,
+     &nkap,ns,dmat,wave1,wave2,projMat)
+      include 'inc.par'
+      real*8 projMat(nstates,nstates),wave1(nstates,2*nm,-nkap:nkap),
+      wave2(nstates,2*nm,-nkap:nkap),dmat(2*nm,2*nm,-nkap:nkap)
+
+      projMat = 0.d0
+      do i1 = 1,nstates
+        do i2 = i1,nstates
+          do kap = -nkap,nkap
+            if (kap .eq. 0)then
+              cycle
+            endif
+            do iw1 = 1,2*nm
+              do iw2 = max(1,iw1-ns+1),min(iw1+ns-1,2*nm)
+                projMat(i1,i2)=projMat(i1,i2)+wave1(i1,iw1,kap)*
+     &          wave2(i2,iw2,kap)*dmat(iw1,iw2,kap)
+              enddo
+            enddo
+          enddo
+          if (i1.ne.i2)then
+            projMat(i2,i1)=projMat(i1,i2)
+          endif
+        enddo
+      enddo
+      return
+      end
+
       subroutine MatrixMMGenerator_neqZ(dTdXi,dRdXi,eigval,nkap,vmat,
      &wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
      &d_number_states_mj)
@@ -5816,11 +5844,6 @@ c         write(*,*)j,el(j)
 
       subroutine spline_arranger(nu,rmin,rmax,t)
       include 'inc.par'
-      common /Barycentres/ RadiusOne,RadiusTwo
-      common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
-     &b_ImpactParam
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 t(nu)
 
       hh=dexp((dlog(rmax)-dlog(rmin))/dble(nu-2*ns))
