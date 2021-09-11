@@ -2877,6 +2877,12 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       mm=(0.d0,0.d0)
 
       if(dkb) then
+!$OMP PARALLEL
+!$OMP&PRIVATE(id,i,d_m1,j,d_m2,k1factor,k1,ki,wavesum_lge1,
+!$OMP&wavesum_sml1,k2factor,k2,kj,wavesum_lge2,wavesum_sml2,unroll,l)
+!$OMP&SHARED(nstates,d_number_states_mj,nkap,nm,wave_new,dvdRmatdkb1,
+!$OMP&nvmat,vmat,dvdRmatdkb2,mm,drdxi,eigval), default(none)
+!$OMP DO
          do i=1,nstates
             d_m1=d_number_states_mj(i)
             do j=i+1,nstates
@@ -2921,7 +2927,15 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                mm(j,i)=-mm(i,j)
             enddo
          enddo
+!$OMP END DO
+!$OMP END PARALLEL
       else
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,d_m1,j,d_m2,k1factor,k1,ki,wavesum_lge1,
+!$OMP&wavesum_sml1,k2factor,k2,kj,unroll,l)
+!$OMP&SHARED(nstates,d_number_states_mj,nkap,nm,wave_new,dvdRmatdkb1,
+!$OMP&nvmat,vmat,dvdRmatdkb2,mm,drdxi,eigval), default(none)
+!$OMP DO
          do i=1,nstates
             d_m1=d_number_states_mj(i)
             do j=i+1,nstates
@@ -2958,6 +2972,8 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
                mm(j,i)=-mm(i,j)
             enddo
          enddo
+!$OMP END DO
+!$OMP END PARALLEL
       endif
       do i=1,nstates
         mm(i,i)=dtdxi*eigval(i)
@@ -2983,6 +2999,12 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       mm=(0.d0,0.d0)
 
       if(dkb) then
+!$OMP PARALLEL
+!$OMP&PRIVATE(id,i,d_m1,j,d_m2,k1factor,k1,ki,wavesum_lge1,
+!$OMP&wavesum_sml1,k2factor,k2,kj,wavesum_lge2,wavesum_sml2,unroll,l)
+!$OMP&SHARED(nstates,d_number_states_mj,nkap,nm,wave_new,dvdRmatdkb1,
+!$OMP&nvmat,vmat,dvdRmatdkb2,mm,drdxi,eigval), default(none)
+!$OMP DO
         do i=1,nstates
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
@@ -3027,7 +3049,15 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
             mm(j,i)=-mm(i,j)
           enddo
         enddo
+!$OMP END DO
+!$OMP END PARALLEL
       else
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,d_m1,j,d_m2,k1factor,k1,ki,wavesum_lge1,
+!$OMP&wavesum_sml1,k2factor,k2,kj,unroll,l)
+!$OMP&SHARED(nstates,d_number_states_mj,nkap,nm,wave_new,dvdRmatdkb1,
+!$OMP&nvmat,vmat,dvdRmatdkb2,mm,drdxi,eigval), default(none)
+!$OMP DO
         do i=1,nstates
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
@@ -3064,6 +3094,8 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
             mm(j,i)=-mm(i,j)
           enddo
         enddo
+!$OMP END DO
+!$OMP END PARALLEL
       endif
       do i=1,nstates
         mm(i,i)=dtdxi*eigval(i)
@@ -3089,6 +3121,12 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
       mm=(0.d0,0.d0)
 
       if(dkb) then
+!$OMP PARALLEL
+!$OMP&PRIVATE(id,i,d_m1,j,d_m2,k1factor,k1,ki,wavesum_lge1,
+!$OMP&wavesum_sml1,k2factor,k2,kj,wavesum_lge2,wavesum_sml2,unroll,l)
+!$OMP&SHARED(nstates,d_number_states_mj,nkap,nm,wave_new,dvdRmatdkb1,
+!$OMP&nvmat,vmat,dvdRmatdkb2,mm,drdxi,eigval), default(none)
+!$OMP DO
         do i=1,nstates
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
@@ -3133,7 +3171,15 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
             mm(j,i)=-mm(i,j)
           enddo
         enddo
+!$OMP END DO
+!$OMP END PARALLEL
       else
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,d_m1,j,d_m2,k1factor,k1,ki,wavesum_lge1,
+!$OMP&wavesum_sml1,k2factor,k2,kj,unroll,l)
+!$OMP&SHARED(nstates,d_number_states_mj,nkap,nm,wave_new,dvdRmatdkb1,
+!$OMP&nvmat,vmat,dvdRmatdkb2,mm,drdxi,eigval), default(none)
+!$OMP DO
         do i=1,nstates
           d_m1=d_number_states_mj(i)
           do j=i+1,nstates
@@ -3170,6 +3216,8 @@ c      write(*,*)mm0,ii-Start_state,jj-Start_state
             mm(j,i)=-mm(i,j)
           enddo
         enddo
+!$OMP END DO
+!$OMP END PARALLEL
       endif
       do i=1,nstates
         mm(i,i)=dtdxi*eigval(i)
@@ -6575,6 +6623,11 @@ c       endif
 
       allocate(norm_mat(nstates,nstates,-nkap:nkap))
       norm_mat=0.d0
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,ki,stor_norm,ii,jj)
+!$OMP&SHARED(nstates,nkap,norm_mat,dkb,nm,wave_new,alt_dmat,dmat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           do ki=-nkap,nkap
@@ -6605,6 +6658,8 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
       allocate(shifted_norm_plus(nstates,nstates,-mj_max:mj_max-1,
      &-mj_max:mj_max-1))
@@ -6614,7 +6669,11 @@ c       endif
       shifted_norm_plus=0.d0
       shifted_norm_minus=0.d0
       bb_mjj=0.d0
-
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,mj,a_mj,mj2,a_mj2,k,a_jk)
+!$OMP&SHARED(nstates,mj_max,nkap,shifted_norm_minus,norm_mat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           do mj=-mj_max+1,mj_max-1
@@ -6635,7 +6694,14 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,mj,a_mj,mj2,a_mj2,k,a_jk)
+!$OMP&SHARED(nstates,mj_max,nkap,shifted_norm_plus,norm_mat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           do mj=-mj_max,mj_max-2
@@ -6656,6 +6722,8 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
       deallocate(norm_mat)
 
@@ -6706,6 +6774,11 @@ c       endif
 
       allocate(norm_mat(nstates,nstates,-nkap:nkap))
       norm_mat=0.d0
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,ki,stor_norm,ii,jj,k1fact)
+!$OMP&SHARED(nstates,nkap,norm_mat,dkb,nm,wave_new,alt_dmat,dmat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           k1fact=(-1)**nkap
@@ -6737,6 +6810,8 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
       allocate(shifted_norm_plus(nstates,nstates,-mj_max:mj_max-1,
      &-mj_max:mj_max-1))
@@ -6746,7 +6821,11 @@ c       endif
       shifted_norm_plus=0.d0
       shifted_norm_minus=0.d0
       bb_mjj=0.d0
-
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,mj,a_mj,mj2,a_mj2,k,a_jk,kfact)
+!$OMP&SHARED(nstates,mj_max,nkap,shifted_norm_minus,norm_mat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           do mj=-mj_max+1,mj_max-1
@@ -6769,7 +6848,14 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,mj,a_mj,mj2,a_mj2,k,a_jk,kfact)
+!$OMP&SHARED(nstates,mj_max,nkap,shifted_norm_plus,norm_mat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           do mj=-mj_max,mj_max-2
@@ -6792,6 +6878,8 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
       deallocate(norm_mat)
 
@@ -6859,6 +6947,11 @@ c       endif
 
       allocate(norm_mat(nstates,nstates,-nkap:nkap))
       norm_mat=0.d0
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,ki,stor_norm,ii,jj,k1fact)
+!$OMP&SHARED(nstates,nkap,norm_mat,dkb,nm,wave_new,alt_dmat,dmat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           k1fact=(-1)**(nkap+1)
@@ -6890,6 +6983,8 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
       allocate(shifted_norm_plus(nstates,nstates,-mj_max:mj_max-1,
      &-mj_max:mj_max-1))
@@ -6899,7 +6994,11 @@ c       endif
       shifted_norm_plus=0.d0
       shifted_norm_minus=0.d0
       bb_mjj=0.d0
-
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,mj,a_mj,mj2,a_mj2,k,a_jk,kfact)
+!$OMP&SHARED(nstates,mj_max,nkap,shifted_norm_minus,norm_mat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           do mj=-mj_max+1,mj_max-1
@@ -6922,7 +7021,14 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
+!$OMP PARALLEL
+!$OMP&PRIVATE(i,j,mj,a_mj,mj2,a_mj2,k,a_jk,kfact)
+!$OMP&SHARED(nstates,mj_max,nkap,shifted_norm_plus,norm_mat)
+!$OMP&default(none)
+!$OMP DO
       do i=1,nstates
         do j=i,nstates
           do mj=-mj_max,mj_max-2
@@ -6945,6 +7051,9 @@ c       endif
           enddo
         enddo
       enddo
+!$OMP END DO
+!$OMP END PARALLEL
+
 
       deallocate(norm_mat)
 
@@ -8679,10 +8788,10 @@ c      endif
       include 'inc.par'
       real*8 wave_new(nstates,2*nm,-nkap:nkap),eigval(nstates)
       integer, dimension(:),allocatable::nearest_neighbours_stor,
-     &nn
+     &nn,nn2
       integer, dimension(:,:), allocatable::nearest_neighbours
       real*8, dimension(:),allocatable::t,ro,ro1,ro2,abstand,
-     &eigval_sort,eigval_old,eigval_old1,nn2
+     &eigval_sort,eigval_old,eigval_old1
       real*8, dimension(:,:), allocatable::sampl_point,
      &sample_differences_stor,Psi_sum,Psi_sum1,
      &Psi_sum_old,g_sum,g_sum1,g_sum_old,f_sum,f_sum1,f_sum_old,dg_sum,
@@ -8813,8 +8922,8 @@ c      endif
         sampl_sum_g=0.d0
         sampl_sum_f=0.d0
 c      pause
-        do ji=1,ii-1
-          Sample_point=sampl_point(abs(ji),i)
+        do ji=1,2*nm
+          Sample_point=sampl_point(ji,i)
           i2=1
           do while(t(i2).lt. Sample_point)
             i2=i2+1
@@ -8939,7 +9048,7 @@ c         df_sum(i)=dabs(df_sum(i))
         allocate(sample_differences(nstates,nstates,16))
         sample_differences=0.d0
         do i=1,nstates
-          do j=1,nstates
+          do j=i,nstates
             sample_differences(j,i,1)=dabs(eigval(i)-eigval_old(j))**2
             if(ii_xi.gt.ixi_stepslower+2)then
               grad_o=eigval_old(j)-eigval_old1(j)
@@ -8951,9 +9060,9 @@ c         df_sum(i)=dabs(df_sum(i))
      &        dabs(Psi_sum(i,n)-Psi_sum_old(j,n))**2
               sample_differences(j,i,3)=sample_differences(j,i,3)+
      &        dabs(g_sum(i,n)-g_sum_old(j,n))**2
-              sample_differences(j,i,4)=sample_differences(j,i,4)+
-     &        dabs(g_on_f(i,n)-g_on_f_old(j,n))**2
               sample_differences(j,i,5)=sample_differences(j,i,5)+
+     &        dabs(g_on_f(i,n)-g_on_f_old(j,n))**2
+              sample_differences(j,i,4)=sample_differences(j,i,4)+
      &        dabs(f_sum(i,n)-f_sum_old(j,n))**2
               sample_differences(j,i,10)=sample_differences(j,i,10)+
      &        dabs(dg_sum(i,n)-dg_sum_old(j,n))**2
@@ -8978,33 +9087,19 @@ c         df_sum(i)=dabs(df_sum(i))
      &          dabs(dg_on_df(i,n)-dg_on_df_old1(j,n))**2
               endif
             enddo
+            sample_differences(i,j,:)=sample_differences(j,i,:)
           enddo
         enddo
         allocate(nearest_neighbours(nstates,16))
+
         do k=1,16
-          do i=1,nstates
-            do j=max(i+3,min(5,nstates)),nstates
-              sample_differences(j,i,k)=-1.d0
-            enddo
-          enddo
-          do i=min(4,nstates),nstates
-            do j=1,min(i-3,nstates-5)
-              sample_differences(j,i,k)=-1.d0
-            enddo
-          enddo
           allocate(sample_differences_stor(nstates,nstates))
-          do i=1,nstates
-            do j=1,nstates
-              sample_differences_stor(i,j)=sample_differences(i,j,k)
-            enddo
-          enddo
+          sample_differences_stor=sample_differences(:,:,k)
           allocate(nearest_neighbours_stor(nstates))
           nearest_neighbours_stor=minloc(sample_differences_stor,
      &    dim=1,mask=sample_differences_stor.ge. 0.d0)
           deallocate(sample_differences_stor)
-          do i=1,nstates
-            nearest_neighbours(i,k)=nearest_neighbours_stor(i)
-          enddo
+          nearest_neighbours(:,k)=nearest_neighbours_stor
           deallocate(nearest_neighbours_stor)
         enddo
 
@@ -9023,45 +9118,29 @@ c         df_sum(i)=dabs(df_sum(i))
         dg_on_df1=dg_on_df
         Psi_sum1=Psi_sum
 
-        i7=5
-        if(ii_xi.gt.ixi_stepslower+2)i7=5
+        i7=4
         do i=1,nstates
           allocate(nn(i7))
-          allocate(nn2(i7))
-          nn2=0.d0
+          allocate(nn2(nstates))
+          nn2=0
+          nn=nearest_neighbours(i,:)
           do k=1,i7
-            nn(k)=nearest_neighbours(i,k)
-          enddo
-          do k=1,i7
-            do k2=1,i7
-              if(nn(k)-nn(k2).eq. 0)then
-                nn2(k)=nn2(k)+1.d0
-              endif
-            enddo
+            nn2(nn(k)) = nn2(nn(k)) + 1
           enddo
 
-          inn2=maxloc(nn2,dim=1)
-          i1=nn(inn2)
+          i1=maxloc(nn2,dim=1)
           deallocate(nn)
           deallocate(nn2)
 
-          do n=1,2*nm
-            g_sum1(i1,n)=g_sum(i,n)
-            f_sum1(i1,n)=f_sum(i,n)
-            dg_sum1(i1,n)=dg_sum(i,n)
-            df_sum1(i1,n)=df_sum(i,n)
-            g_on_f1(i1,n)=g_on_f(i,n)
-            dg_on_df1(i1,n)=dg_on_df(i,n)
-            Psi_sum1(i1,n)=Psi_sum(i,n)
-          enddo
+          g_sum1(i1,:)=g_sum(i,:)
+          f_sum1(i1,:)=f_sum(i,:)
+          dg_sum1(i1,:)=dg_sum(i,:)
+          df_sum1(i1,:)=df_sum(i,:)
+          g_on_f1(i1,:)=g_on_f(i,:)
+          dg_on_df1(i1,:)=dg_on_df(i,:)
+          Psi_sum1(i1,:)=Psi_sum(i,:)
           eigval_sort(i1)=eigval(i)
-          do k=-nkap,nkap
-            if(k.ne.0)then
-              do j=1,2*nm
-                wave_new_sort(i1,j,k)=wave_new(i,j,k)
-              enddo
-            endif
-          enddo
+          wave_new_sort(i1,:,:)=wave_new(i,:,:)
         enddo
 
         g_sum=g_sum1
