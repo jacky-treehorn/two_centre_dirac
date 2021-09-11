@@ -185,12 +185,12 @@ c         enddo
 c      enddo
 c      stop
 
-      call D01BAZ(-1.d0, 1.d0, ITYPE, 4, W4, t4, IFAIL)
-      call D01BAZ(-1.d0, 1.d0, ITYPE, 8, W8, t8, IFAIL)
-      call D01BAZ(-1.d0, 1.d0, ITYPE, 16, W16, t16, IFAIL)
-      call D01BAZ(-1.d0, 1.d0, ITYPE, 32, W32, t32, IFAIL)
-      call D01BAZ(-1.d0, 1.d0, ITYPE, 64, W64, t64, IFAIL)
-      call D01BAZ(-1.d0, 1.d0, ITYPE, 6, W6, t6, IFAIL)
+      call D01BAZ(-1.d0, 1.d0, 4, W4, t4, IFAIL)
+      call D01BAZ(-1.d0, 1.d0, 8, W8, t8, IFAIL)
+      call D01BAZ(-1.d0, 1.d0, 16, W16, t16, IFAIL)
+      call D01BAZ(-1.d0, 1.d0, 32, W32, t32, IFAIL)
+      call D01BAZ(-1.d0, 1.d0, 64, W64, t64, IFAIL)
+      call D01BAZ(-1.d0, 1.d0, 6, W6, t6, IFAIL)
 
 c      if(Nuc_model.eq.3)then
       af1=0.5233875553d0
@@ -429,6 +429,27 @@ c         Does anything in here depend on xi? Only up_energy changes.
 
         call sign_of_states_monopole(number_states,
      &  wave,nstates,nm,nkap,ii_xi,xi_stepslower,rmin,rmax,'a')
+        if(z_nuc1.ne.z_nuc2)then
+          allocate(eigval(nstates))
+          allocate(wave_new(nstates,2*nm,-nkap:nkap))
+          i_even_odd_normal = 0
+          call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
+     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,
+     &    wave_new,i_even_odd_normal)
+        else
+          allocate(eigval_o(nsto))
+          allocate(eigval_e(nste))
+          allocate(wave_new_even(nste,2*nm,-nkap:nkap))
+          allocate(wave_new_odd(nsto,2*nm,-nkap:nkap))
+          i_even_odd_normal = 1
+          call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
+     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
+     &    wave_new_even,i_even_odd_normal)
+          i_even_odd_normal = 2
+          call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
+     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
+     &    wave_new_odd,i_even_odd_normal)
+        endif
         d_amuOrig=amu
         d_amjmaxOrig=amj_max
         call DiracAngularJ(dble(nkap),d_mjMax)
@@ -444,12 +465,6 @@ c         Does anything in here depend on xi? Only up_energy changes.
           allocate(wave_new_mj(nstates,2*nm,-nkap:nkap,
      &    -n_jstates:n_jstates))
           wave_new_mj=0.d0
-          allocate(eigval(nstates))
-          allocate(wave_new(nstates,2*nm,-nkap:nkap))
-          i_even_odd_normal = 0
-          call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
-     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,
-     &    wave_new,i_even_odd_normal)
           if(b_ImpactParam .gt. 0.d0)then
             do n_jstate=n_jstates,1,-1
               amu=amu-1.d0
@@ -477,18 +492,6 @@ c         Does anything in here depend on xi? Only up_energy changes.
           allocate(wave_new_odd_mj(nste,2*nm,-nkap:nkap,
      &    -n_jstates:n_jstates))
           wave_new_odd_mj=0.d0
-          allocate(eigval_o(nsto))
-          allocate(eigval_e(nste))
-          allocate(wave_new_even(nste,2*nm,-nkap:nkap))
-          allocate(wave_new_odd(nsto,2*nm,-nkap:nkap))
-          i_even_odd_normal = 1
-          call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
-     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
-     &    wave_new_even,i_even_odd_normal)
-          i_even_odd_normal = 2
-          call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
-     &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
-     &    wave_new_odd,i_even_odd_normal)
           if(b_ImpactParam .gt. 0.d0)then
             do n_jstate=n_jstates,1,-1
               amu=amu-1.d0
@@ -499,8 +502,8 @@ c         Does anything in here depend on xi? Only up_energy changes.
               eigval_o_mj(:,-n_jstate)=eigval_o
               wave_new_even_mj(:,:,:,n_jstate)=wave_new_even
               wave_new_even_mj(:,:,:,-n_jstate)=wave_new_even
-              wave_new_odd_mj(:,:,:,n_jstate)=wave_odd_even
-              wave_new_odd_mj(:,:,:,-n_jstate)=wave_odd_even
+              wave_new_odd_mj(:,:,:,n_jstate)=wave_new_odd
+              wave_new_odd_mj(:,:,:,-n_jstate)=wave_new_odd
             enddo
             nsts=2*n_jstates*nste
             allocate(bb_mjj_even(nsts,nsts))
@@ -653,30 +656,17 @@ C           This function redefines nsto=2*n_jstates*nsto
         pp=0.d0
         do i=1,nstates
           do j=1,nstates
-            k=i
             pp(i,j)=cdexp(aaeigval(i)*(0,-1)*step_faktor)*
-     &              dconjg(aaeigvecr(j,k))
-!            summe=0.d0
-!            k=i
-!            do k=1,nstates
-!              if(i.eq.k)then
-!                summe=summe+
-!     &          cdexp(aaeigval(i)*(0,-1)*step_faktor)*
-!     &          dconjg(aaeigvecr(j,k))
-!              endif
-!            enddo
-!            pp(i,j)=summe
+     &              dconjg(aaeigvecr(j,i))
           enddo
         enddo
         deallocate(aaeigval)
         dd=0.d0
         do i=1,nstates
           do j=1,nstates
-            summe=0.d0
             do k=1,nstates
-              summe=summe+aaeigvecr(i,k)*pp(k,j)
+              dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
             enddo
-            dd(i,j)=summe
           enddo
         enddo
 
@@ -710,8 +700,6 @@ C           This function redefines nsto=2*n_jstates*nsto
           if(z_nuc1.ne.z_nuc2)then
             i=1
             do while(eigval(i).le.-1.d0)
-C             Fill the Dirac Sea completely.
-              coeff(i) = 1.d0
               i=i+1
             enddo
             lowest_bound=i
@@ -720,8 +708,6 @@ C             Fill the Dirac Sea completely.
           else
             i=1
             do while(eigval_e(i).le.-1.d0)
-C             Fill the Dirac Sea completely.
-              coeff(i) = 1.d0/dsqrt(2.d0)
               i=i+1
             enddo
             lowest_bound_e=i
@@ -730,8 +716,6 @@ C             Fill the Dirac Sea completely.
             coeff(lowest_bound_e)=1.d0/dsqrt(2.d0)
             i=1
             do while(eigval_o(i).le.-1.d0)
-C             Fill the Dirac Sea completely.
-              coeff(i) = 1.d0/dsqrt(2.d0)
               i=i+1
             enddo
             lowest_bound_o=nste+i

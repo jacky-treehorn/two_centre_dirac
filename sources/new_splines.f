@@ -1089,9 +1089,9 @@ c      enddo
       end
 
 
-      SUBROUTINE D01BAZ(A, B, ITYPE, NPTS, WEIGHT, ABSCIS, IFAIL)
+      SUBROUTINE D01BAZ(A, B, NPTS, WEIGHT, ABSCIS, IFAIL)
       DOUBLE PRECISION A, B
-      INTEGER IFAIL, ITYPE, NPTS
+      INTEGER IFAIL, NPTS
       DOUBLE PRECISION ABSCIS(NPTS), WEIGHT(NPTS)
       DOUBLE PRECISION HFRNGE, PNTMID
       INTEGER I, IIJJ, N, NL, NN, NPTSA
@@ -1731,8 +1731,8 @@ c      write(*,*) 'COMPOSING EVEN CI MATRIX'
       n1=0
       kfact=(-1)**nkap
       do k=nkap,1,-1
-      k1=k*kfact
-      kfact=-kfact
+        k1=k*kfact
+        kfact=-kfact
         do j1=number_states(1,k1),number_states(2,k1)
           n1=n1+1
           amat(n1,n1)=e(j1,k1)
