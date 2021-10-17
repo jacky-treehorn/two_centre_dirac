@@ -23,7 +23,7 @@ c     must be constant there)
       common /neg_cont/ Manual_ncont_states
       real*8, dimension(:),allocatable:: eigval,eigval_e,eigval_o,
      &aaeigval,d_number_states_mj,d_number_states_mj_even,
-     &d_number_states_mj_odd
+     &d_number_states_mj_odd, all_eigval_upshifted
       real*8, dimension(:,:),allocatable:: e,dmat,
      &eigval_mj,eigval_e_mj,eigval_o_mj,projMatMultipole
       real*8, dimension(:,:,:),allocatable:: wave,wave_new_at_dip,
@@ -608,6 +608,14 @@ C           This function redefines nsto=2*n_jstates*nsto
           nstates=nste+nsto
         endif
 
+        allocate(all_eigval_upshifted(nstates))
+        if(z_nuc1.ne.z_nuc2)then
+          all_eigval_upshifted = eigval + 1.d0
+        else
+          all_eigval_upshifted(1:nste)=eigval_e + 1.d0
+          all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
+        endif
+
         deallocate(dmat)
 
         if(ii_xi.eq.xi_stepslower) then
@@ -664,12 +672,15 @@ C           This function redefines nsto=2*n_jstates*nsto
         dd=0.d0
         do i=1,nstates
           do j=1,nstates
-            do k=1,nstates
-              dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
-            enddo
+            if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
+     &      .gt.0.d0))then
+              do k=1,nstates
+                dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
+              enddo
+            endif
           enddo
         enddo
-
+        deallocate(all_eigval_upshifted)
         deallocate(pp)
         deallocate(aaeigvecr)
 
@@ -698,27 +709,45 @@ C           This function redefines nsto=2*n_jstates*nsto
           write(How_fast,195)int(Proj_vel*1000.d0)
   195     format(I4.4)
           if(z_nuc1.ne.z_nuc2)then
-            i=1
-            do while(eigval(i).le.-1.d0)
-              i=i+1
+            e_lowestBound = maxval(eigval)
+            lowest_bound = maxloc(eigval, 1)
+            do i=1,nstates
+              if (eigval(i) .gt. -1.d0) then
+                if(eigval(i) .lt. e_lowestBound)then
+                  e_lowestBound = eigval(i)
+                  lowest_bound = i
+                endif
+              endif
             enddo
-            lowest_bound=i
+            write(*,*) 'LOWEST BOUND', eigval(lowest_bound)
 !         coefffornorm(lowest_bound)=1.d0
             coeff(lowest_bound)=1.d0
           else
-            i=1
-            do while(eigval_e(i).le.-1.d0)
-              i=i+1
+            e_lowestBoundEven = maxval(eigval_e)
+            lowest_bound_e = maxloc(eigval_e, 1)
+            do i=1,nste
+              if (eigval_e(i) .gt. -1.d0)then
+                if(eigval_e(i) .lt. e_lowestBoundEven)then
+                  e_lowestBoundEven = eigval_e(i)
+                  lowest_bound_e = i
+                endif
+              endif
             enddo
-            lowest_bound_e=i
+            write(*,*) 'LOWEST BOUND EVEN', eigval_e(lowest_bound_e)
 !         coefffornorm(lowest_bound_e)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_e)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_e)=1.d0/dsqrt(2.d0)
-            i=1
-            do while(eigval_o(i).le.-1.d0)
-              i=i+1
+            e_lowestBoundOdd = maxval(eigval_o)
+            lowest_bound_o = maxloc(eigval_o, 1) + nste
+            do i=1,nsto
+              if (eigval_o(i) .gt. -1.d0)then
+                if(eigval_o(i) .lt. e_lowestBoundOdd)then
+                  e_lowestBoundOdd = eigval_o(i)
+                  lowest_bound_o = i + nste
+                endif
+              endif
             enddo
-            lowest_bound_o=nste+i
+            write(*,*) 'LOWEST BOUND ODD', eigval_o(lowest_bound_o-nste)
 !       coefffornorm(lowest_bound_o)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_o)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_o)=1.d0/dsqrt(2.d0)
