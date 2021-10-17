@@ -610,13 +610,6 @@ C           This function redefines nsto=2*n_jstates*nsto
 
         deallocate(dmat)
 
-        if(ii_xi.eq.xi_stepslower) then
-          allocate(coeff(nstates))
-   !         allocate(coeff_prev(nstates))
-          allocate(coefffornorm(nstates))
-   !         allocate(coefffornorm_prev(nstates))
-        endif
-
         write(*,*) 'CREATING B'
         allocate(bb(nstates,nstates))
         bb=0.d0
@@ -662,6 +655,8 @@ C           This function redefines nsto=2*n_jstates*nsto
         deallocate(aaeigval)
 
         if(ii_xi.eq.xi_stepslower)then
+          allocate(coeff(nstates))
+          allocate(coefffornorm(nstates))
           coeff=0.d0
 !      coeff_prev=0.d0
 !      coefffornornm_prev=0.d0
@@ -673,6 +668,7 @@ C           This function redefines nsto=2*n_jstates*nsto
   194     format(I2.2)
           write(How_fast,195)int(Proj_vel*1000.d0)
   195     format(I4.4)
+          n_vacuum_states = 0
           if(z_nuc1.ne.z_nuc2)then
             e_lowestBound = maxval(eigval)
             lowest_bound = maxloc(eigval, 1)
@@ -682,11 +678,18 @@ C           This function redefines nsto=2*n_jstates*nsto
                   e_lowestBound = eigval(i)
                   lowest_bound = i
                 endif
+              else
+                n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
             write(*,*) 'LOWEST BOUND', eigval(lowest_bound)
 !         coefffornorm(lowest_bound)=1.d0
             coeff(lowest_bound)=1.d0
+            do i=1,nstates
+              if (eigval(i) .lt. -1.d0) then
+                coeff(i) = 1.d0/dble(n_vacuum_states)
+              endif
+            enddo
           else
             e_lowestBoundEven = maxval(eigval_e)
             lowest_bound_e = maxloc(eigval_e, 1)
@@ -696,6 +699,8 @@ C           This function redefines nsto=2*n_jstates*nsto
                   e_lowestBoundEven = eigval_e(i)
                   lowest_bound_e = i
                 endif
+              else
+                n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
             write(*,*) 'LOWEST BOUND EVEN', eigval_e(lowest_bound_e)
@@ -710,12 +715,24 @@ C           This function redefines nsto=2*n_jstates*nsto
                   e_lowestBoundOdd = eigval_o(i)
                   lowest_bound_o = i + nste
                 endif
+              else
+                n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
             write(*,*) 'LOWEST BOUND ODD', eigval_o(lowest_bound_o-nste)
 !       coefffornorm(lowest_bound_o)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_o)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_o)=1.d0/dsqrt(2.d0)
+            do i=1,nste
+              if (eigval_e(i) .lt. -1.d0) then
+                coeff(i) = 1.d0/dble(n_vacuum_states)/dsqrt(2.d0)
+              endif
+            enddo
+            do i=1,nsto
+              if (eigval_o(i) .lt. -1.d0) then
+                coeff(i+nste) = 1.d0/dble(n_vacuum_states)/dsqrt(2.d0)
+              endif
+            enddo
           endif
 !      coeff=coefffornorm
 !      coeff_prev=coeff
