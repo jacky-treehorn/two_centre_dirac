@@ -608,14 +608,6 @@ C           This function redefines nsto=2*n_jstates*nsto
           nstates=nste+nsto
         endif
 
-        allocate(all_eigval_upshifted(nstates))
-        if(z_nuc1.ne.z_nuc2)then
-          all_eigval_upshifted = eigval + 1.d0
-        else
-          all_eigval_upshifted(1:nste)=eigval_e + 1.d0
-          all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
-        endif
-
         deallocate(dmat)
 
         if(ii_xi.eq.xi_stepslower) then
@@ -656,7 +648,6 @@ C           This function redefines nsto=2*n_jstates*nsto
         aaeigvecr=0.d0
         allocate(pp(nstates,nstates))
         allocate(dd(nstates,nstates))
-        allocate(ddmatnorm(nstates))
         write(*,*) 'DIAGONALISING B',2*8*(nstates)**2/
      &  10**6,'MB'
         call c_diagonal(nstates,bb,aaeigval,aaeigvecr)
@@ -669,32 +660,6 @@ C           This function redefines nsto=2*n_jstates*nsto
           enddo
         enddo
         deallocate(aaeigval)
-        dd=0.d0
-        do i=1,nstates
-          do j=1,nstates
-            if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
-     &      .gt.0.d0))then
-              do k=1,nstates
-                dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
-              enddo
-            endif
-          enddo
-        enddo
-        deallocate(all_eigval_upshifted)
-        deallocate(pp)
-        deallocate(aaeigvecr)
-
-        do i=1,nstates
-          summe=0.d0
-          do j=1,nstates
-            summe=summe+dd(i,j)
-          enddo
-          ddmatnorm(i)=summe
-        enddo
-        ddmatnorm_1=maxval(cdabs(ddmatnorm))
-
-        write(333,*)i_xi,'MATRIX NORM',ddmatnorm_1
-        deallocate(ddmatnorm)
 
         if(ii_xi.eq.xi_stepslower)then
           coeff=0.d0
@@ -755,6 +720,45 @@ C           This function redefines nsto=2*n_jstates*nsto
 !      coeff=coefffornorm
 !      coeff_prev=coeff
         endif
+
+        allocate(all_eigval_upshifted(nstates))
+        if(z_nuc1.ne.z_nuc2)then
+          all_eigval_upshifted = eigval + 1.d0
+          all_eigval_upshifted(lowest_bound) = 1.d0
+        else
+          all_eigval_upshifted(1:nste)=eigval_e + 1.d0
+          all_eigval_upshifted(lowest_bound_e) = 1.d0
+          all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
+          all_eigval_upshifted(lowest_bound_o) = 1.d0
+        endif
+
+        dd=0.d0
+        do i=1,nstates
+          do j=1,nstates
+            if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
+     &      .gt.0.d0))then
+              do k=1,nstates
+                dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
+              enddo
+            endif
+          enddo
+        enddo
+        deallocate(all_eigval_upshifted)
+        deallocate(pp)
+        deallocate(aaeigvecr)
+
+        allocate(ddmatnorm(nstates))
+        do i=1,nstates
+          summe=0.d0
+          do j=1,nstates
+            summe=summe+dd(i,j)
+          enddo
+          ddmatnorm(i)=summe
+        enddo
+        ddmatnorm_1=maxval(cdabs(ddmatnorm))
+
+        write(333,*)i_xi,'MATRIX NORM',ddmatnorm_1
+        deallocate(ddmatnorm)
 
         if(z_nuc1.ne.z_nuc2)then
           energy_lowest_bound = eigval(lowest_bound)
