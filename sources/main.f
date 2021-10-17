@@ -35,7 +35,7 @@ c     must be constant there)
       real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1
       real*8, dimension(:,:,:,:,:,:),allocatable::dvdRmatdkb2
       integer, dimension(:,:),allocatable:: number_states,
-     &number_states_perm
+     &number_states_perm,interactionMat
       complex*16, dimension(:,:),allocatable:: bb,dd,pp,
      &aaeigvecr,mm,mmeven,mmodd,bb_mjj,bb_mjj_even,bb_mjj_odd
       complex*16, dimension(:), allocatable :: ddmatnorm,coeff,
@@ -722,28 +722,50 @@ C           This function redefines nsto=2*n_jstates*nsto
         endif
 
         allocate(all_eigval_upshifted(nstates))
+        allocate(interactionMat(nstates,nstates))
+        interactionMat = 1
         if(z_nuc1.ne.z_nuc2)then
           all_eigval_upshifted = eigval + 1.d0
-          all_eigval_upshifted(lowest_bound) = 1.d0
         else
           all_eigval_upshifted(1:nste)=eigval_e + 1.d0
-          all_eigval_upshifted(lowest_bound_e) = 1.d0
           all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
-          all_eigval_upshifted(lowest_bound_o) = 1.d0
         endif
+        do i=1,nstates
+          do j=1,nstates
+            if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
+     &      .lt.0.d0))then
+              interactionMat(i,j) = 0
+            endif
+          enddo
+        enddo
+        if (z_nuc1.ne.z_nuc2)then
+          if (all_eigval_upshifted(lowest_bound_e) .lt. 0.d0) then
+            interactionMat(lowest_bound_e,:) = 1
+            interactionMat(:,lowest_bound_e) = 1
+          endif
+          if (all_eigval_upshifted(lowest_bound_o) .lt. 0.d0) then
+            interactionMat(lowest_bound_o,:) = 1
+            interactionMat(:,lowest_bound_o) = 1
+          endif
+        else
+          if (all_eigval_upshifted(lowest_bound) .lt. 0.d0) then
+            interactionMat(lowest_bound,:) = 1
+            interactionMat(:,lowest_bound) = 1
+          endif
+        endif
+        deallocate(all_eigval_upshifted)
 
         dd=0.d0
         do i=1,nstates
           do j=1,nstates
-            if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
-     &      .gt.0.d0))then
+            if (interactionMat(i,j).eq.1)then
               do k=1,nstates
                 dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
               enddo
             endif
           enddo
         enddo
-        deallocate(all_eigval_upshifted)
+        deallocate(interactionMat)
         deallocate(pp)
         deallocate(aaeigvecr)
 
