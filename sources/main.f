@@ -687,7 +687,7 @@ C           This function redefines nsto=2*n_jstates*nsto
             coeff(lowest_bound)=1.d0
             do i=1,nstates
               if (eigval(i) .lt. -1.d0) then
-                coeff(i) = 1.d0/dble(n_vacuum_states)
+                coeff(i) = 1.d0
               endif
             enddo
           else
@@ -725,12 +725,12 @@ C           This function redefines nsto=2*n_jstates*nsto
             coeff(lowest_bound_o)=1.d0/dsqrt(2.d0)
             do i=1,nste
               if (eigval_e(i) .lt. -1.d0) then
-                coeff(i) = 1.d0/dble(n_vacuum_states)/dsqrt(2.d0)
+                coeff(i) = 1.d0/dsqrt(2.d0)
               endif
             enddo
             do i=1,nsto
               if (eigval_o(i) .lt. -1.d0) then
-                coeff(i+nste) = 1.d0/dble(n_vacuum_states)/dsqrt(2.d0)
+                coeff(i+nste) = 1.d0/dsqrt(2.d0)
               endif
             enddo
           endif
@@ -752,10 +752,21 @@ C           This function redefines nsto=2*n_jstates*nsto
             if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
      &      .lt.0.d0))then
               interactionMat(i,j) = 0
+            else
+c             Make vacuum states non interacting.
+              if((all_eigval_upshifted(i).lt.0.d0) .and. (i.ne.j))then
+                interactionMat(i,j) = 0
+              endif
             endif
           enddo
         enddo
+c       Except when the ground state dips into the neg. continuum.
         if (z_nuc1.ne.z_nuc2)then
+          if (all_eigval_upshifted(lowest_bound) .lt. 0.d0) then
+            interactionMat(lowest_bound,:) = 1
+            interactionMat(:,lowest_bound) = 1
+          endif
+        else
           if (all_eigval_upshifted(lowest_bound_e) .lt. 0.d0) then
             interactionMat(lowest_bound_e,:) = 1
             interactionMat(:,lowest_bound_e) = 1
@@ -763,11 +774,6 @@ C           This function redefines nsto=2*n_jstates*nsto
           if (all_eigval_upshifted(lowest_bound_o) .lt. 0.d0) then
             interactionMat(lowest_bound_o,:) = 1
             interactionMat(:,lowest_bound_o) = 1
-          endif
-        else
-          if (all_eigval_upshifted(lowest_bound) .lt. 0.d0) then
-            interactionMat(lowest_bound,:) = 1
-            interactionMat(:,lowest_bound) = 1
           endif
         endif
         deallocate(all_eigval_upshifted)
@@ -1084,7 +1090,7 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
         enddo
         write(333,*)i_xi,'MULTIPOLE NORM',vectornorm_1
 c     Is renormalisation recommended for pair production?
-        coeff=coeff/dsqrt(vectornorm_1)
+c        coeff=coeff/dsqrt(vectornorm_1)
 
         if(ii_xi.eq.0)then
           iii_xi=1
