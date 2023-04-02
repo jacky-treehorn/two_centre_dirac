@@ -87,38 +87,40 @@ c      allocate(b2(nm+2,nm+2,0:2*nkap))
         allocate(v2sbj4(-nkap:nkap,-nkap:nkap,nm+2,nm+2,0:2*nkap))
       endif
 
-      select case (nuz)
-      case(4)
-        do i=1,nuz
-          ttt(i)=t4n(i)
-          www(i)=w4n(i)
-        enddo
-      case(8)
-        do i=1,nuz
-          ttt(i)=t8(i)
-          www(i)=w8(i)
-        enddo
-      case(6)
-        do i=1,nuz
-          ttt(i)=t6(i)
-          www(i)=w6(i)
-        enddo
-      case(16)
-        do i=1,nuz
-          ttt(i)=t16(i)
-          www(i)=w16(i)
-        enddo
-      case(32)
-        do i=1,nuz
-          ttt(i)=t32(i)
-          www(i)=w32(i)
-        enddo
-      case(64)
-        do i=1,nuz
-          ttt(i)=t64(i)
-          www(i)=w64(i)
-        enddo
-      end select
+      call getIntegralWeights(ttt, www)
+
+!      select case (nuz)
+!      case(4)
+!        do i=1,4
+!          ttt(i)=t4n(i)
+!          www(i)=w4n(i)
+!        enddo
+!      case(8)
+!        do i=1,8
+!          ttt(i)=t8(i)
+!          www(i)=w8(i)
+!        enddo
+!      case(6)
+!        do i=1,6
+!          ttt(i)=t6(i)
+!          www(i)=w6(i)
+!        enddo
+!      case(16)
+!        do i=1,16
+!          ttt(i)=t16(i)
+!          www(i)=w16(i)
+!        enddo
+!      case(32)
+!        do i=1,32
+!          ttt(i)=t32(i)
+!          www(i)=w32(i)
+!        enddo
+!      case(64)
+!        do i=1,64
+!          ttt(i)=t64(i)
+!          www(i)=w64(i)
+!        enddo
+!      end select
 
       v=0.d0
       b=0.d0
@@ -2127,38 +2129,40 @@ c               endif
         allocate(dvb(nm+2,nm+2,0:2*nkap))
       endif
 
-      select case (nuz)
-      case(4)
-        do i=1,nuz
-          ttt(i)=t4n(i)
-          www(i)=w4n(i)
-        enddo
-      case(8)
-        do i=1,nuz
-          ttt(i)=t8(i)
-          www(i)=w8(i)
-        enddo
-      case(6)
-        do i=1,nuz
-          ttt(i)=t6(i)
-          www(i)=w6(i)
-        enddo
-      case(16)
-        do i=1,nuz
-          ttt(i)=t16(i)
-          www(i)=w16(i)
-        enddo
-      case(32)
-        do i=1,nuz
-          ttt(i)=t32(i)
-          www(i)=w32(i)
-        enddo
-      case(64)
-        do i=1,nuz
-          ttt(i)=t64(i)
-          www(i)=w64(i)
-        enddo
-      end select
+      call getIntegralWeights(ttt, www)
+
+!      select case (nuz)
+!      case(4)
+!        do i=1,4
+!          ttt(i)=t4n(i)
+!          www(i)=w4n(i)
+!        enddo
+!      case(8)
+!        do i=1,8
+!          ttt(i)=t8(i)
+!          www(i)=w8(i)
+!        enddo
+!      case(6)
+!        do i=1,6
+!          ttt(i)=t6(i)
+!          www(i)=w6(i)
+!        enddo
+!      case(16)
+!        do i=1,16
+!          ttt(i)=t16(i)
+!          www(i)=w16(i)
+!        enddo
+!      case(32)
+!        do i=1,32
+!          ttt(i)=t32(i)
+!          www(i)=w32(i)
+!        enddo
+!      case(64)
+!        do i=1,64
+!          ttt(i)=t64(i)
+!          www(i)=w64(i)
+!        enddo
+!      end select
 
       v=0.d0
       b=0.d0
@@ -2517,38 +2521,40 @@ c      allocate(b2(nm+2,nm+2,0:2*nkap))
         allocate(dvb(nm+2,nm+2,0:2*nkap))
       endif
 
-      select case (nuz)
-      case(4)
-        do i=1,nuz
-          ttt(i)=t4n(i)
-          www(i)=w4n(i)
-        enddo
-      case(8)
-        do i=1,nuz
-          ttt(i)=t8(i)
-          www(i)=w8(i)
-        enddo
-      case(6)
-        do i=1,nuz
-          ttt(i)=t6(i)
-          www(i)=w6(i)
-        enddo
-      case(16)
-        do i=1,nuz
-          ttt(i)=t16(i)
-          www(i)=w16(i)
-        enddo
-      case(32)
-        do i=1,nuz
-          ttt(i)=t32(i)
-          www(i)=w32(i)
-        enddo
-      case(64)
-        do i=1,nuz
-          ttt(i)=t64(i)
-          www(i)=w64(i)
-        enddo
-      end select
+      call getIntegralWeights(ttt, www)
+
+!      select case (nuz)
+!      case(4)
+!        do i=1,nuz
+!          ttt(i)=t4n(i)
+!          www(i)=w4n(i)
+!        enddo
+!      case(8)
+!        do i=1,nuz
+!          ttt(i)=t8(i)
+!          www(i)=w8(i)
+!        enddo
+!      case(6)
+!        do i=1,nuz
+!          ttt(i)=t6(i)
+!          www(i)=w6(i)
+!        enddo
+!      case(16)
+!        do i=1,nuz
+!          ttt(i)=t16(i)
+!          www(i)=w16(i)
+!        enddo
+!      case(32)
+!        do i=1,nuz
+!          ttt(i)=t32(i)
+!          www(i)=w32(i)
+!        enddo
+!      case(64)
+!        do i=1,nuz
+!          ttt(i)=t64(i)
+!          www(i)=w64(i)
+!        enddo
+!      end select
 
       v=0.d0
       b=0.d0

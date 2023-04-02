@@ -1,4 +1,4 @@
-FORTRAN=ifort
+FORTRAN=gfortran
 FLAG=-O2
 FLAG_TST=-check all -warn unused
 COMPILE=-c

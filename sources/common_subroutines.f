@@ -145,7 +145,7 @@
                   icol=k
                 endif
               else if (ipiv(k).gt.1) then
-                pause 'singular matrix in gaussj'
+                write(*,*) 'singular matrix in function gaussj'
               endif
 12          continue
           endif
@@ -165,7 +165,9 @@
         endif
         indxr(i)=irow
         indxc(i)=icol
-        if (a(icol,icol).eq.0.) pause 'singular matrix in gaussj'
+        if (a(icol,icol).eq.0.) then
+          write(*,*) 'singular matrix in function gaussj'
+        endif
         pivinv=1./a(icol,icol)
         a(icol,icol)=1.
         do 16 l=1,n
@@ -231,7 +233,7 @@ C  (C) Copr. 1986-92 Numerical Recipes Software VsXz&v%120(9p+45$j3D.
             do kkk=1,N
               write(*,*) kkk,xa(kkk),ya(kkk)
             enddo
-            pause 'failure in polint'
+            write(*,*) 'failure in function polint'
           endif
           den=w/den
           d(i)=hp*den
@@ -297,12 +299,12 @@ C  (C) Copr. 1986-92 Numerical Recipes Software VsXz&v%120(9p+45$j3D.
             if(dabs((ya(1)-ya(N))/ya(N)).gt.1.d-10) then
               write(*,*) 'x,y**',x,y
               write(*,*) '****'
-       pause 'FAILURE IN RATINT'
+              write(*,*) 'FAILURE IN FUNCTION RATINT'
             endif
             return
 
           endif
-          IF(DD.EQ.0.d0)PAUSE
+          IF(DD.EQ.0.d0)write(*,*) 'FAILURE IN FUNCTION RATINT'
           DD=W/DD
           D(I)=C(I+1)*DD
           C(I)=T*DD
@@ -326,7 +328,9 @@ c     Now the definition of Condon&Shortley is used. This differs from
 c     Abramowitz's definition by factor (-1)**mbar
 c
       IMPLICIT REAL*8(A-H,O-Z)
-      IF(MBAR.LT.0.OR.MBAR.GT.L.OR.ABS(X).GT.1.D0) PAUSE 'BAD ARGUMENTS'
+      IF(MBAR.LT.0.OR.MBAR.GT.L.OR.ABS(X).GT.1.D0) THEN
+        WRITE(*,*) 'BAD ARGUMENTS TO PLGNDR'
+      ENDIF
       PMM=1.D0
       IF(MBAR.GT.0) THEN
         SOMX2=DSQRT((1.D0-X)*(1.D0+X))
@@ -440,7 +444,7 @@ c     m=mm*0.5
       Coeff_maker2=SumSubject2(-0.5d0,mu,l_1,BigL,l_2,j_1,j_2)+
      &SumSubject2(0.5d0,mu,l_1,BigL,l_2,j_1,j_2)
 c     enddo
-      if(dabs(coeff_maker).lt. 1.d-12)coeff_maker=0.d0
+      if(dabs(coeff_maker2).lt. 1.d-12)coeff_maker2=0.d0
       return
       end function Coeff_maker2
 
@@ -711,21 +715,23 @@ c of the internuclear distances as a function of xi from Tupitsyn.
 c The units here are Nuclear units.
 
       subroutine New_Elapsed_time(z1,z2,m1,m2,v,b,xi,time)
+      include 'inc.par'
       real*8 z1,z2,m1,m2,v,b,xi,time,a_faktor,e_faktor
 
-      a_faktor=z1*z2/((v**2*137.035999d0)*
-     &(m1*m2*1836.15267245d0/(m1+m2)))
-      e_faktor=dsqrt(1+(b/137.035999d0)**2/(a_faktor**2))
+      a_faktor=z1*z2/((v**2*c)*
+     &(m1*m2*pe_massratio/(m1+m2)))
+      e_faktor=dsqrt(1+(b/c)**2/(a_faktor**2))
       time=(e_faktor*dsinh(xi)+ xi)*a_faktor/v
       return
       end
 
       subroutine NewInterNuclDist(z1,z2,m1,m2,v,b,xi,IND)
+      include 'inc.par'
       real*8 z1,z2,m1,m2,v,b,xi,IND,a_faktor,e_faktor
       if(z1*z2.ne. 0.d0)then
-        a_faktor=z1*z2/((v**2*137.035999d0)*
-     &  (m1*m2*1836.15267245d0/(m1+m2)))
-        e_faktor=dsqrt(1+(b/137.035999d0)**2/(a_faktor**2))
+        a_faktor=z1*z2/((v**2*c)*
+     &  (m1*m2*pe_massratio/(m1+m2)))
+        e_faktor=dsqrt(1+(b/c)**2/(a_faktor**2))
         IND=a_faktor*(e_faktor*dcosh(xi)+1.d0)
 
 c IND=(sqrt(1.d0+(b/137.035999d0)**2/(z1*z2/((v**2*137.035999d0**2)*
@@ -747,11 +753,12 @@ c return
 c end
 
       subroutine DofRwrtXi(z1,z2,m1,m2,v,b,xi,dRdXi)
+      include 'inc.par'
       real*8 z1,z2,m1,m2,v,b,xi,dRdXi,a_faktor,e_faktor
       if(z1*z2.ne. 0.d0)then
-        a_faktor=z1*z2/((v**2*137.035999d0)*
-     &  (m1*m2*1836.15267245d0/(m1+m2)))
-        e_faktor=dsqrt(1+(b/137.035999d0)**2/(a_faktor**2))
+        a_faktor=z1*z2/((v**2*c)*
+     &  (m1*m2*pe_massratio/(m1+m2)))
+        e_faktor=dsqrt(1+(b/c)**2/(a_faktor**2))
         dRdXi=a_faktor*e_faktor*dsinh(xi)
 
 c dRdXi=(sqrt(1.d0+(b/137.035999d0)**2/(z1*(z2)/((v**2*137.035999d0**2)*
@@ -772,11 +779,12 @@ c return
 c end
 
       subroutine DofTwrtXi(z1,z2,m1,m2,v,b,xi,dTdXi)
+      include 'inc.par'
       real*8 z1,z2,m1,m2,v,b,xi,dTdXi,a_faktor,e_faktor
       if(z1*z2.ne. 0.d0)then
-        a_faktor=z1*z2/((v**2*137.035999d0)*
-     &  (m1*m2*1836.15267245d0/(m1+m2)))
-        e_faktor=dsqrt(1+(b/137.035999d0)**2/(a_faktor**2))
+        a_faktor=z1*z2/((v**2*c)*
+     &  (m1*m2*pe_massratio/(m1+m2)))
+        e_faktor=dsqrt(1+(b/c)**2/(a_faktor**2))
         dTdXi=a_faktor*(e_faktor*dcosh(xi)+1)/v
 
 c dTdXi=(sqrt(1.d0+(b/137.035999d0)**2/(z1*z2/((v**2*137.035999d0**2)*
@@ -790,13 +798,14 @@ c      dTdXi=137.035999d0*dTdXi/v
       end
 
       subroutine Axis_angle_Theta(z1,z2,m1,m2,v,b,xi,Theta)
-      real*8 z1,z2,m1,m2,v,b,xi,Theta
+      include 'inc.par'
+      real*8 z1,z2,m1,m2,v,b,xi,Theta,a_faktor
       if(z1*z2.ne. 0.d0)then
 
-        a_faktor=z1*z2/((v**2*137.035999d0)*
-     &  (m1*m2*1836.15267245d0/(m1+m2)))
+        a_faktor=z1*z2/((v**2*c)*
+     &  (m1*m2*pe_massratio/(m1+m2)))
 
-        epslon=dsqrt(1.d0+(b/137.035999d0)**2/a_faktor**2)
+        epslon=dsqrt(1.d0+(b/c)**2/a_faktor**2)
 
         Theta=2.d0*datan(dsqrt(epslon**2 - 1.d0)*(dtanh(xi/2.d0)+1.d0)/
      &  ((epslon+1.d0)-(epslon-1.d0)*dtanh(xi/2.d0)))
@@ -809,12 +818,13 @@ c      dTdXi=137.035999d0*dTdXi/v
       end
 
       subroutine DofThetawrtXi(z1,z2,m1,m2,v,b,xi,dThetadXi)
+      include 'inc.par'
       real*8 z1,z2,m1,m2,v,b,xi,dThetadXi
       if(z1*z2.ne. 0.d0)then
 
-        a_faktor=z1*z2/((v**2*137.035999d0)*
-     &  (m1*m2*1836.15267245d0/(m1+m2)))
-        epslon=dsqrt(1.d0+(b/137.035999d0)**2/a_faktor**2)
+        a_faktor=z1*z2/((v**2*c)*
+     &  (m1*m2*pe_massratio/(m1+m2)))
+        epslon=dsqrt(1.d0+(b/c)**2/a_faktor**2)
 
         dThetadXi=dsqrt(-1.d0 + epslon**2)/(1.d0 + epslon*dcosh(xi))
 
@@ -1339,8 +1349,8 @@ c end
      &MatEl_Ang_comp_sml(-nkap:nkap,0:2*nkap,-nkap:nkap)
       integer nstates,state_2,L,nvmat,
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
-      logical state_range_input
-      common /staterangeinput/ state_range_input
+c      logical state_range_input
+c      common /staterangeinput/ state_range_input
       common /momentum_projection/ amu,amj_max
 
 
@@ -1501,8 +1511,8 @@ c     &            MatEl_Ang_comp_sml(kk2,L,kk)
      &MatEl_Ang_comp_sml(-nkap:nkap,0:2*nkap,-nkap:nkap)
       integer nstates,state_2,L,nvmat,
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
-      logical state_range_input
-      common /staterangeinput/ state_range_input
+c      logical state_range_input
+c      common /staterangeinput/ state_range_input
       common /momentum_projection/ amu,amj_max
 
 
@@ -1655,7 +1665,7 @@ c     &            MatEl_Ang_comp_sml(kk2,L,kk)
      &nm,0:2*nkap,-nkap:nkap),
      &vmat(nm,nm,0:2*nkap,nvmat)
       integer nstates,state_2,L,nvmat
-      common /staterangeinput/ state_range_input
+c      common /staterangeinput/ state_range_input
       common /momentum_projection/ amu,amj_max
 
       wavesum_l1=0.d0
@@ -1753,7 +1763,7 @@ c          endif
      &nm,0:2*nkap,-nkap:nkap),
      &vmat(nm,nm,0:2*nkap,nvmat)
       integer nstates,state_2,L,nvmat
-      common /staterangeinput/ state_range_input
+c      common /staterangeinput/ state_range_input
       common /momentum_projection/ amu,amj_max
 
 
@@ -1823,7 +1833,7 @@ c          endif
      &nm,0:2*nkap,-nkap:nkap),
      &vmat(nm,nm,0:2*nkap,nvmat)
       integer nstates,state_2,L,nvmat
-      common /staterangeinput/ state_range_input
+c      common /staterangeinput/ state_range_input
       common /momentum_projection/ amu,amj_max
 
 
@@ -1922,7 +1932,7 @@ c          endif
      &wavesum_lge1,wave_new,wavesum_sml1,
      &Mat_dimension,Start_state,nkap,nstates,nm,unroll)
       include 'inc.par'
-      integer Start_state,
+      integer Start_state,state_1,
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
@@ -2028,7 +2038,7 @@ c      endif
      &wavesum_lge1,wave_new,wavesum_sml1,
      &Mat_dimension,Start_state,nkap,nstates,nm,unroll)
       include 'inc.par'
-      integer Start_state,
+      integer Start_state,state_1,
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
@@ -2149,7 +2159,7 @@ c      endif
      &wavesum_lge1,wave_new,wavesum_sml1,
      &Mat_dimension,Start_state,nkap,nstates,nm,unroll)
       include 'inc.par'
-      integer Start_state,
+      integer Start_state,state_1,
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
@@ -2265,137 +2275,137 @@ c      endif
       end
 
 
-C     ******************************************************************
-C     ORPHANED VERSION
-C     ******************************************************************
-      subroutine unrolling_nondkb_old(jj,state_1,
-     &wavesum_lge1,wave_new,wavesum_sml1,
-     &Mat_dimension,Start_state,nkap,nstates,nm,unroll)
-      include 'inc.par'
-      integer Start_state,state_1
-      real*8 wave_new(nstates,2*nm,-nkap:nkap),
-     &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
-     &nm,0:2*nkap,-nkap:nkap),
-     &wavesum_sml1(Start_state:Start_state+Mat_dimension-1,
-     &nm,0:2*nkap,-nkap:nkap),
-     &unroll(0:2*nkap,2),
-     &MatEl_Ang_comp_sml(0:2*nkap),
-     &MatEl_Ang_comp_lge(0:2*nkap)
-      common /momentum_projection/ amu,amj_max
+!C     *****************************************************************
+!C     ORPHANED VERSION kappa_1 and kappa_2 are not initialized here!
+!C     *****************************************************************
+!      subroutine unrolling_nondkb_old(jj,state_1,
+!     &wavesum_lge1,wave_new,wavesum_sml1,
+!     &Mat_dimension,Start_state,nkap,nstates,nm,unroll)
+!      include 'inc.par'
+!      integer Start_state,state_1
+!      real*8 wave_new(nstates,2*nm,-nkap:nkap),
+!     &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
+!     &nm,0:2*nkap,-nkap:nkap),
+!     &wavesum_sml1(Start_state:Start_state+Mat_dimension-1,
+!     &nm,0:2*nkap,-nkap:nkap),
+!     &unroll(0:2*nkap,2),
+!     &MatEl_Ang_comp_sml(0:2*nkap),
+!     &MatEl_Ang_comp_lge(0:2*nkap)
+!      common /momentum_projection/ amu,amj_max
+!
+!
+!      MatEl_Ang_comp_lge=0.d0
+!      MatEl_Ang_comp_sml=0.d0
+!
+!      do L=0,2*nkap
+!        MatEl_Ang_comp_lge(L)=
+!     &  Coeff_maker(amu,kappa_1*1.d0,kappa_2*1.d0,L)
+!      enddo
+!
+!      unroll=0.d0
+!      do L=0,2*nkap
+!        if(dabs(MatEl_Ang_comp_lge(L)).gt.1.d-14)then
+!          do i=1,nm
+!            unroll(L,1)=unroll(L,1)+
+!     &      wavesum_lge1(jj,i,L,kappa_2)*
+!     &      wave_new(state_1,i,kappa_1)
+!          enddo
+!          unroll(L,1)=unroll(L,1)*MatEl_Ang_comp_lge(L)
+!        endif
+!      enddo
+!      do L=0,2*nkap
+!        MatEl_Ang_comp_sml(L)=
+!     &  Coeff_maker(amu,-1.d0*kappa_1,-1.d0*kappa_2,L)
+!      enddo
+!      do L=0,2*nkap
+!        if(dabs(MatEl_Ang_comp_sml(L)).gt.1.d-14)then
+!          do i=1,nm
+!            unroll(L,2)=unroll(L,2)+
+!     &      wavesum_sml1(jj,i,L,kappa_2)*
+!     &      wave_new(state_1,i+nm,kappa_1)
+!          enddo
+!          unroll(L,2)=unroll(L,2)*MatEl_Ang_comp_sml(L)
+!        endif
+!      enddo
+!
+!c      if (jj.lt.Start_state+4 .and. state_1.lt.Start_state+4)then
+!c      write(43,*)jj,state_1,kappa_1,kappa_2,unroll
+!c      endif
+!
+!      return
+!      end
 
-
-      MatEl_Ang_comp_lge=0.d0
-      MatEl_Ang_comp_sml=0.d0
-
-      do L=0,2*nkap
-        MatEl_Ang_comp_lge(L)=
-     &  Coeff_maker(amu,kappa_1*1.d0,kappa_2*1.d0,L)
-      enddo
-
-      unroll=0.d0
-      do L=0,2*nkap
-        if(dabs(MatEl_Ang_comp_lge(L)).gt.1.d-14)then
-          do i=1,nm
-            unroll(L,1)=unroll(L,1)+
-     &      wavesum_lge1(jj,i,L,kappa_2)*
-     &      wave_new(state_1,i,kappa_1)
-          enddo
-          unroll(L,1)=unroll(L,1)*MatEl_Ang_comp_lge(L)
-        endif
-      enddo
-      do L=0,2*nkap
-        MatEl_Ang_comp_sml(L)=
-     &  Coeff_maker(amu,-1.d0*kappa_1,-1.d0*kappa_2,L)
-      enddo
-      do L=0,2*nkap
-        if(dabs(MatEl_Ang_comp_sml(L)).gt.1.d-14)then
-          do i=1,nm
-            unroll(L,2)=unroll(L,2)+
-     &      wavesum_sml1(jj,i,L,kappa_2)*
-     &      wave_new(state_1,i+nm,kappa_1)
-          enddo
-          unroll(L,2)=unroll(L,2)*MatEl_Ang_comp_sml(L)
-        endif
-      enddo
-
-c      if (jj.lt.Start_state+4 .and. state_1.lt.Start_state+4)then
-c      write(43,*)jj,state_1,kappa_1,kappa_2,unroll
-c      endif
-
-      return
-      end
-
-C     ******************************************************************
-C     ORPHANED VERSION
-C     ******************************************************************
-      subroutine unrolling_dkb_old(jj,state_1,
-     &wavesum_lge1,wavesum_lge2,wave_new,wavesum_sml1,
-     &wavesum_sml2,Mat_dimension,Start_state,nkap,nstates,nm,unroll)
-      include 'inc.par'
-      integer Start_state,state_1
-      real*8 wave_new(nstates,2*nm,-nkap:nkap),
-     &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
-     &nm,0:2*nkap,-nkap:nkap),
-     &wavesum_lge2(Start_state:Start_state+Mat_dimension-1,
-     &nm,0:2*nkap,-nkap:nkap,-nkap:nkap),
-     &wavesum_sml1(Start_state:Start_state+Mat_dimension-1,
-     &nm,0:2*nkap,-nkap:nkap),
-     &wavesum_sml2(Start_state:Start_state+Mat_dimension-1,
-     &nm,0:2*nkap,-nkap:nkap,-nkap:nkap),
-     &unroll(0:2*nkap,2),
-     &MatEl_Ang_comp_sml(0:2*nkap),
-     &MatEl_Ang_comp_lge(0:2*nkap)
-      common /momentum_projection/ amu,amj_max
-
-
-      MatEl_Ang_comp_lge=0.d0
-      MatEl_Ang_comp_sml=0.d0
-
-      do L=0,2*nkap
-        MatEl_Ang_comp_lge(L)=
-     &  Coeff_maker(amu,kappa_1*1.d0,kappa_2*1.d0,L)
-      enddo
-
-      unroll=0.d0
-      do L=0,2*nkap
-        if(dabs(MatEl_Ang_comp_lge(L)).gt.1.d-14)then
-          do i=1,nm
-            unroll(L,1)=unroll(L,1)+
-c     & wavesum_lge1(jj,i,L,kappa_2,kappa_1)*
-     &      wavesum_lge1(jj,i,L,kappa_2)*
-     &      wave_new(state_1,i,kappa_1)+
-     &      wavesum_lge2(jj,i,L,kappa_2,kappa_1)*
-     &      wave_new(state_1,i+nm,kappa_1)
-          enddo
-          unroll(L,1)=unroll(L,1)*MatEl_Ang_comp_lge(L)
-        endif
-      enddo
-      do L=0,2*nkap
-        MatEl_Ang_comp_sml(L)=
-     &  Coeff_maker(amu,-1.d0*kappa_1,-1.d0*kappa_2,L)
-      enddo
-
-      do L=0,2*nkap
-        if(dabs(MatEl_Ang_comp_sml(L)).gt.1.d-14)then
-          do i=1,nm
-            unroll(L,2)=unroll(L,2)+
-c     & wavesum_sml1(jj,i,L,kappa_2,kappa_1)*
-     &      wavesum_sml1(jj,i,L,kappa_2)*
-     &      wave_new(state_1,i+nm,kappa_1)+
-     &      wavesum_sml2(jj,i,L,kappa_2,kappa_1)*
-     &      wave_new(state_1,i,kappa_1)
-          enddo
-          unroll(L,2)=unroll(L,2)*MatEl_Ang_comp_sml(L)
-        endif
-      enddo
-
-c      if (jj.lt.Start_state+4 .and. state_1.lt.Start_state+4)then
-c      write(44,*)jj,state_1,kappa_1,kappa_2,unroll
-c      endif
-
-
-      return
-      end
+!C     *****************************************************************
+!C     ORPHANED VERSION, kappa_1 and kappa_2 are not initialized here!
+!C     *****************************************************************
+!      subroutine unrolling_dkb_old(jj,state_1,
+!     &wavesum_lge1,wavesum_lge2,wave_new,wavesum_sml1,
+!     &wavesum_sml2,Mat_dimension,Start_state,nkap,nstates,nm,unroll)
+!      include 'inc.par'
+!      integer Start_state,state_1
+!      real*8 wave_new(nstates,2*nm,-nkap:nkap),
+!     &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
+!     &nm,0:2*nkap,-nkap:nkap),
+!     &wavesum_lge2(Start_state:Start_state+Mat_dimension-1,
+!     &nm,0:2*nkap,-nkap:nkap,-nkap:nkap),
+!     &wavesum_sml1(Start_state:Start_state+Mat_dimension-1,
+!     &nm,0:2*nkap,-nkap:nkap),
+!     &wavesum_sml2(Start_state:Start_state+Mat_dimension-1,
+!     &nm,0:2*nkap,-nkap:nkap,-nkap:nkap),
+!     &unroll(0:2*nkap,2),
+!     &MatEl_Ang_comp_sml(0:2*nkap),
+!     &MatEl_Ang_comp_lge(0:2*nkap)
+!      common /momentum_projection/ amu,amj_max
+!
+!
+!      MatEl_Ang_comp_lge=0.d0
+!      MatEl_Ang_comp_sml=0.d0
+!
+!      do L=0,2*nkap
+!        MatEl_Ang_comp_lge(L)=
+!     &  Coeff_maker(amu,kappa_1*1.d0,kappa_2*1.d0,L)
+!      enddo
+!
+!      unroll=0.d0
+!      do L=0,2*nkap
+!        if(dabs(MatEl_Ang_comp_lge(L)).gt.1.d-14)then
+!          do i=1,nm
+!            unroll(L,1)=unroll(L,1)+
+!c     & wavesum_lge1(jj,i,L,kappa_2,kappa_1)*
+!     &      wavesum_lge1(jj,i,L,kappa_2)*
+!     &      wave_new(state_1,i,kappa_1)+
+!     &      wavesum_lge2(jj,i,L,kappa_2,kappa_1)*
+!     &      wave_new(state_1,i+nm,kappa_1)
+!          enddo
+!          unroll(L,1)=unroll(L,1)*MatEl_Ang_comp_lge(L)
+!        endif
+!      enddo
+!      do L=0,2*nkap
+!        MatEl_Ang_comp_sml(L)=
+!     &  Coeff_maker(amu,-1.d0*kappa_1,-1.d0*kappa_2,L)
+!      enddo
+!
+!      do L=0,2*nkap
+!        if(dabs(MatEl_Ang_comp_sml(L)).gt.1.d-14)then
+!          do i=1,nm
+!            unroll(L,2)=unroll(L,2)+
+!c     & wavesum_sml1(jj,i,L,kappa_2,kappa_1)*
+!     &      wavesum_sml1(jj,i,L,kappa_2)*
+!     &      wave_new(state_1,i+nm,kappa_1)+
+!     &      wavesum_sml2(jj,i,L,kappa_2,kappa_1)*
+!     &      wave_new(state_1,i,kappa_1)
+!          enddo
+!          unroll(L,2)=unroll(L,2)*MatEl_Ang_comp_sml(L)
+!        endif
+!      enddo
+!
+!c      if (jj.lt.Start_state+4 .and. state_1.lt.Start_state+4)then
+!c      write(44,*)jj,state_1,kappa_1,kappa_2,unroll
+!c      endif
+!
+!
+!      return
+!      end
 
       subroutine unrolling_dkb(wavesum_lge1,wavesum_lge2,wave_new,
      &wavesum_sml1,wavesum_sml2,nkap,nm,nstates,lstep,unroll,k1,
@@ -2422,7 +2432,7 @@ c      endif
 
       do ll=0,2*nkap,lstep
 !        ang_comp_s=coeff_maker(amu,-1.d0*k1,-1.d0*k2,ll)
-        ang_comp_l=coeffMakerExplicit(d_m1,d_m2,-k1,-k2,ll)
+        ang_comp_s=coeffMakerExplicit(d_m1,d_m2,-k1,-k2,ll)
         if(ang_comp_s.ne.0.d0)then
           do i=1,nm
             unroll(ll,2)=unroll(ll,2)+
@@ -2439,7 +2449,7 @@ c      endif
      &wavesum_lge1,wavesum_lge2,wave_new,wavesum_sml1,
      &wavesum_sml2,Mat_dimension,Start_state,nkap,nstates,nm,unroll)
       include 'inc.par'
-      integer Start_state,
+      integer Start_state,state_1,
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
@@ -2570,7 +2580,7 @@ c      endif
      &wavesum_sml2,
      &Mat_dimension,Start_state,nkap,nstates,nm,unroll)
       include 'inc.par'
-      integer Start_state,
+      integer Start_state,state_1,
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(Start_state:Start_state+Mat_dimension-1,
@@ -2719,8 +2729,8 @@ C     ******************************************************************
      &Start_state:Start_state+Mat_dimension-1)
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
-      common /staterangeinput/ state_range_input
-      logical dkb,state_range_input
+c      common /staterangeinput/ state_range_input
+      logical dkb!,state_range_input
 
       write(*,*) 'ENTER MAIN MATRIX'
 
@@ -3246,8 +3256,8 @@ C     ******************************************************************
      &Start_state:Start_state+2*Mat_dimension-1)
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
-      common /staterangeinput/ state_range_input
-      logical dkb,state_range_input
+c      common /staterangeinput/ state_range_input
+      logical dkb!,state_range_input
 
       mmeven=0.d0
       do ii=Start_state,Start_state+Mat_dimension-1!End_state
@@ -3381,8 +3391,8 @@ C     ******************************************************************
      &Start_state:Start_state+2*Mat_dimension-1)
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
-      common /staterangeinput/ state_range_input
-      logical dkb,state_range_input
+c      common /staterangeinput/ state_range_input
+      logical dkb!,state_range_input
 
       mmodd=0.d0
       do ii=Start_state,Start_state+Mat_dimension-1!End_state
@@ -3512,11 +3522,12 @@ ccc endif
       real*8, dimension(:,:,:), allocatable:: contributor_states
       integer, dimension (:), allocatable:: lsize,i_holder
       integer, dimension (:,:), allocatable:: contributor_substates
-      logical dkb,check,mkdirs
+      logical dkb,check!,mkdirs
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
 
-      mkdirs=makedirqq('PRJ')
+      !mkdirs=makedirqq('PRJ')
+      CALL SYSTEM("mkdir PRJ")
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -3765,11 +3776,12 @@ c      enddo
      &tcb_eval(nstates_mj),eigvec(nstates,nstates)
       real*8, dimension(:,:), allocatable:: mm0,temp_cont_states,
      &primary_element,primary_element_prev
-      logical dkb,check,mkdirs
+      logical dkb,check!,mkdirs
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
 
-      mkdirs=makedirqq('PRJ')
+      !mkdirs=makedirqq('PRJ')
+      CALL SYSTEM("mkdir PRJ")
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -4007,10 +4019,11 @@ c      enddo
       integer, dimension(:), allocatable:: lsize,i_holder
       integer, dimension(:,:), allocatable:: contributor_substates
       logical dkb,check
-      common /common_dkb/ dkb,mkdirs
+      common /common_dkb/ dkb!,mkdirs
       common /momentum_projection/ amu,amj_max
 
-      mkdirs=makedirqq('PRJ')
+      !mkdirs=makedirqq('PRJ')
+      CALL SYSTEM("mkdir PRJ")
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -4272,16 +4285,18 @@ C
       TH=DATAN(Y/X0)
       GR=(X0-.5D0)*DLOG(Z1)-TH*Y-X0+0.5D0*DLOG(2.0D0*PI)
       GI=TH*(X0-0.5D0)+Y*DLOG(Z1)-Y
-      DO 10 K=1,10
+      DO K=1,10
          T=Z1**(1-2*K)
          GR=GR+A(K)*T*DCOS((2.0D0*K-1.0D0)*TH)
-10       GI=GI-A(K)*T*DSIN((2.0D0*K-1.0D0)*TH)
+         GI=GI-A(K)*T*DSIN((2.0D0*K-1.0D0)*TH)
+      ENDDO
       IF (X.LE.7.0) THEN
          GR1=0.0D0
          GI1=0.0D0
-         DO 15 J=0,NA-1
+         DO J=0,NA-1
             GR1=GR1+.5D0*DLOG((X+J)**2+Y*Y)
-15          GI1=GI1+DATAN(Y/(X+J))
+            GI1=GI1+DATAN(Y/(X+J))
+         ENDDO
          GR=GR-GR1
          GI=GI-GI1
       ENDIF
@@ -4663,7 +4678,7 @@ C PRECISION.
       INTEGER N, NN
       DOUBLE PRECISION OP(101), TEMP(101),
      * ZEROR(100), ZEROI(100), T, AA, BB, CC, DABS,
-     * FACTOR
+     * FACTOR, L
       REAL PT(101), LO, MAX, MIN, XX, YY, COSR,
      * SINR, XXX, X, SC, BND, XM, FF, DF, DX, INFIN,
      * SMALNO, BASE
@@ -4686,7 +4701,7 @@ C         SYSTEM USED.
 C THE VALUES BELOW CORRESPOND TO THE BURROUGHS B6700
       BASE = 8.
       ETA = .5*BASE**(1-26)
-      INFIN = 4.3E68
+      INFIN = HUGE(0.0)!4.3E68
       SMALNO = 1.0E-37
 C ARE AND MRE REFER TO THE UNIT ERROR IN + AND *
 C RESPECTIVELY. THEY ARE ASSUMED TO BE THE SAME AS
@@ -4897,8 +4912,8 @@ C NZ - NUMBER OF ZEROS FOUND
       NZ = 0
       BETAV = .25
       BETAS = .25
-      OSS = SR
-      OVV = V
+      OSS = REAL(SR)
+      OVV = REAL(V)
 C EVALUATE POLYNOMIAL BY SYNTHETIC DIVISION
       CALL QUADSD(NN, U, V, P, QP, A, B)
       CALL CALCSC(TYPE)
@@ -4907,10 +4922,10 @@ C CALCULATE NEXT K POLYNOMIAL AND ESTIMATE V
         CALL NEXTK(TYPE)
         CALL CALCSC(TYPE)
         CALL NEWEST(TYPE, UI, VI)
-        VV = VI
+        VV = REAL(VI)
 C ESTIMATE S
         SS = 0.
-        IF (K(N).NE.0.D0) SS = -P(NN)/K(N)
+        IF (K(N).NE.0.D0) SS = REAL(-P(NN)/K(N))
         TV = 1.
         TS = 1.
         IF (J.EQ.1 .OR. TYPE.EQ.3) GO TO 70
@@ -5019,12 +5034,12 @@ C SIGN
      * DABS(LZR)) RETURN
 C EVALUATE POLYNOMIAL BY QUADRATIC SYNTHETIC DIVISION
       CALL QUADSD(NN, U, V, P, QP, A, B)
-      MP = DABS(A-SZR*B) + DABS(SZI*B)
+      MP = REAL(DABS(A-SZR*B) + DABS(SZI*B))
 C COMPUTE A RIGOROUS  BOUND ON THE ROUNDING ERROR IN
 C EVALUTING P
       ZM = SQRT(ABS(SNGL(V)))
       EE = 2.*ABS(SNGL(QP(1)))
-      T = -SZR*B
+      T = REAL(-SZR*B)
       DO 20 I=2,N
         EE = EE*ZM + ABS(SNGL(QP(I)))
    20 CONTINUE
@@ -5065,7 +5080,7 @@ C CALCULATE NEXT K POLYNOMIAL AND NEW U AND V
       CALL NEWEST(TYPE, UI, VI)
 C IF VI IS ZERO THE ITERATION IS NOT CONVERGING
       IF (VI.EQ.0.D0) RETURN
-      RELSTP = DABS((VI-V)/VI)
+      RELSTP = REAL(DABS((VI-V)/VI))
       U = UI
       V = VI
       GO TO 10
@@ -5102,10 +5117,10 @@ C EVALUATE P AT S
         PV = PV*S + P(I)
         QP(I) = PV
    20 CONTINUE
-      MP = DABS(PV)
+      MP = REAL(DABS(PV))
 C COMPUTE A RIGOROUS BOUND ON THE ERROR IN EVALUATING
 C P
-      MS = DABS(S)
+      MS = REAL(DABS(S))
       EE = (MRE/(ARE+MRE))*ABS(SNGL(QP(1)))
       DO 30 I=2,NN
         EE = EE*MS + ABS(SNGL(QP(I)))
@@ -5530,7 +5545,7 @@ c
 
       CALL ZSYTRF ('U',a_dim,a_inv,a_dim,
      &IPIV_proj, WORK_proj,-1, INFO_proj)
-      LWORK_prj=WORK_proj(1)
+      LWORK_prj=nint(dble(WORK_proj(1)))
       deallocate(WORK_proj)
       allocate(WORK_proj(LWORK_prj))
       CALL ZSYTRF ('U',a_dim,a_inv,a_dim,
@@ -5559,23 +5574,23 @@ c
       CALL ZGETRF (a_dim,a_dim,a_inv,a_dim,
      &IPIV_proj, INFO_proj)
       if(info_proj.ne.0)then
-        write(*,*)'INFO NON-ZERO',INFO_proj
-        pause
+        write(*,*)'amat_inverse_general 1: INFO NON-ZERO',INFO_proj
+        stop
       endif
       CALL ZGETRI (a_dim,a_inv,a_dim,
      &IPIV_proj, WORK_proj, -1,INFO_proj)
-      LWORK=Work_proj(1)
+      LWORK=nint(dble(Work_proj(1)))
       deallocate(WORK_proj)
       allocate(WORK_proj(LWORK))
       if(info_proj.ne.0)then
-        write(*,*)'INFO NON-ZERO',INFO_proj
-        pause
+        write(*,*)'amat_inverse_general 2: INFO NON-ZERO',INFO_proj
+        stop
       endif
       CALL ZGETRI (a_dim,a_inv,a_dim,
      &IPIV_proj, WORK_proj,LWORK,INFO_proj)
       if(info_proj.ne.0)then
-        write(*,*)'INFO NON-ZERO',INFO_proj
-        pause
+        write(*,*)'amat_inverse_general 3: INFO NON-ZERO',INFO_proj
+        stop
       endif
 
       deallocate(IPIV_proj)
@@ -5598,8 +5613,8 @@ c
 
       CALL zgefa(a_inv,a_dim,a_dim,ipiv,info)
       if(info.ne.0)then
-        write(*,*)'INFO NON-ZERO',INFO
-        pause
+        write(*,*)'amat_inverse_general_alternate: INFO NON-ZERO',INFO
+        stop
       endif
       CALL zgedi(a_inv,a_dim,a_dim,ipiv,det,work,1)
 
@@ -5927,12 +5942,13 @@ c         write(*,*)j,el(j)
       real*8,dimension(:),allocatable::t
       character*80 Line_readin
       real*8, dimension(:), allocatable:: Line_value
-      logical dkb,mkdirs
+      logical dkb!,mkdirs
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
 
-      mkdirs=makedirqq('WF')
+      !mkdirs=makedirqq('WF')
+      CALL SYSTEM("mkdir WF")
 
       do i_nst=1,nstates
         do kk=-nkap,nkap
@@ -6105,12 +6121,13 @@ C     FULL WAVEFUNCTION SAMPLING
       character*80 Line_readin
       character typ
       logical dkb,swapover
-      common /common_dkb/ dkb,mkdirs
+      common /common_dkb/ dkb!,mkdirs
       common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
-      mkdirs=makedirqq('WF')
+      !mkdirs=makedirqq('WF')
+      CALL SYSTEM("mkdir WF")
 
       abstand=rmax*0.5d0
       lstep=1
@@ -6323,13 +6340,14 @@ c     &      (Sample_point**2+1.d0)
       character*80 Line_readin
       character*3 env
       character typ
-      logical dkb,swapover,mkdirs
+      logical dkb,swapover!,mkdirs
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
-      mkdirs=makedirqq('WF')
+      !mkdirs=makedirqq('WF')
+      CALL SYSTEM("mkdir WF")
 
       sampl_point=0.d0
       swapover=.false.
@@ -8713,11 +8731,11 @@ c      endif
      &LDVL,eigvectr,nm, ILO, IHI, SCALES, ABRNM, RCONDE, RCONDV, WORK,
      &LWORK,RWORK, INFO )
       if(INFO.ne.0)then
-      write(*,*)'INFO NON-ZERO',INFO
-      pause
+        write(*,*)'c_diagonal_general 1: INFO NON-ZERO',INFO
+        stop
       endif
 
-      LWORK=WORK(1)
+      LWORK=nint(dble(WORK(1)))
       deallocate(WORK)
       allocate(WORK(LWORK))
 
@@ -8725,8 +8743,8 @@ c      endif
      &LDVL,eigvectr,nm, ILO, IHI, SCALES, ABRNM, RCONDE, RCONDV, WORK,
      &LWORK, RWORK, INFO )
       if(INFO.ne.0)then
-      write(*,*)'INFO NON-ZERO',INFO
-      pause
+        write(*,*)'c_diagonal_general 2: INFO NON-ZERO',INFO
+        stop
       endif
       deallocate(WORK)
       deallocate(vl)
@@ -8753,19 +8771,19 @@ c      endif
       CALL ZGEEV(JOBVL, JOBVR, nm, A, nm, eignum, VL, LDVL, eigvectr,
      &nm, WORK, LWORK, RWORK, INFO)
       if(INFO.ne.0)then
-        write(*,*)'INFO NON-ZERO',INFO
-        pause
+        write(*,*)'c_diagonal_general_option 1: INFO NON-ZERO',INFO
+        stop
       endif
 
-      LWORK=WORK(1)
+      LWORK=nint(dble(WORK(1)))
       deallocate(WORK)
       allocate(WORK(LWORK))
 
       CALL ZGEEV(JOBVL, JOBVR, nm, A, nm, eignum, VL, LDVL, eigvectr,
      &nm, WORK, LWORK, RWORK, INFO)
       if(INFO.ne.0)then
-        write(*,*)'INFO NON-ZERO',INFO
-        pause
+        write(*,*)'c_diagonal_general_option 2: INFO NON-ZERO',INFO
+        stop
       endif
       deallocate(WORK)
       deallocate(vl)
@@ -8802,13 +8820,14 @@ c      endif
       real*8, dimension(:,:,:), allocatable::sample_differences,
      &wave_new_sort
       character*1 typ
-      logical dkb,mkdirs
+      logical dkb!,mkdirs
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
-      mkdirs=makedirqq('WF')
+      !mkdirs=makedirqq('WF')
+      CALL SYSTEM("mkdir WF")
 
       a_IND=RadiusOne+RadiusTwo
       allocate(abstand(nstates))
@@ -9231,13 +9250,14 @@ c         df_sum(i)=dabs(df_sum(i))
      &flipped(nstates)
       real*8,dimension(:),allocatable::t
       character*1 typ
-      logical dkb,en_min(4),skipq(nstates),mkdirs
+      logical dkb,en_min(4),skipq(nstates)!,mkdirs
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
-      mkdirs=makedirqq('WF')
+      !mkdirs=makedirqq('WF')
+      CALL SYSTEM("mkdir WF")
 
       a_IND=RadiusOne+RadiusTwo
       abstand=rmax*0.5d0/(z_nuc1+z_nuc2)**0.25d0
@@ -9351,8 +9371,7 @@ c         pause
      &          spharm(idint(al1l),idint(amu+5.d-1),-1.d0)
                 call DiracAngularL_int(kk,llk)
                 ang_test=coeff_maker(amu,-1.d0*kk,1.d0*kk,llk)
-                write(*,*)kk,llk,ang_test
-                pause
+                write(*,*)'spline_arranger: ', kk,llk,ang_test
                 do i_spl=max(2,i2-ns+1),min(i2,nm+1)
                   if(dkb)then
 
@@ -9632,13 +9651,14 @@ c     &      wfgtotal**2+wfftotal**2+wfgtotal1**2+wfftotal1**2
       integer backflip(nstates),nearest_neighbours(nstates)
       real*8,dimension(:),allocatable::t
       character*1 typ
-      logical dkb,mkdirs
+      logical dkb!,mkdirs
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
-      mkdirs=makedirqq('WF')
+      !mkdirs=makedirqq('WF')
+      CALL SYSTEM("mkdir WF")
 
       a_IND=RadiusOne+RadiusTwo
       abstand=rmax*0.5d0/(z_nuc1+z_nuc2)**0.25d0
@@ -10083,5 +10103,46 @@ c              df_sum_old(iii)=df_storage
         endif
       enddo
       nstates = 2*n_jstates*nstates
+      return
+      end
+
+      subroutine getIntegralWeights(ttt, www)
+      include 'inc.par'
+      real*8 ttt(nuz), www(nuz)
+      common /weights/ w4n(4),t4n(4),w8(8),t8(8),w16(16),t16(16),
+     &w32(32),t32(32),w64(64),t64(64),t6(6),w6(6)
+
+      select case (nuz)
+        case(4)
+          do i=1,4
+            ttt(i)=t4n(i)
+            www(i)=w4n(i)
+          enddo
+        case(8)
+          do i=1,8
+            ttt(i)=t8(i)
+            www(i)=w8(i)
+          enddo
+        case(6)
+          do i=1,6
+            ttt(i)=t6(i)
+            www(i)=w6(i)
+          enddo
+        case(16)
+          do i=1,16
+            ttt(i)=t16(i)
+            www(i)=w16(i)
+          enddo
+        case(32)
+          do i=1,32
+            ttt(i)=t32(i)
+            www(i)=w32(i)
+          enddo
+        case(64)
+          do i=1,64
+            ttt(i)=t64(i)
+            www(i)=w64(i)
+          enddo
+      end select
       return
       end

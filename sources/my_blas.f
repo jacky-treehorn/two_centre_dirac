@@ -570,8 +570,8 @@
       CALL DSYGST( ITYPE, UPLO, N, A, LDA, B, LDB, INFO )
       CALL DSYEVD( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, IWORK, LIWORK,
      $             INFO )
-      LOPT = MAX( DBLE( LOPT ), DBLE( WORK( 1 ) ) )
-      LIOPT = MAX( DBLE( LIOPT ), DBLE( IWORK( 1 ) ) )
+      LOPT = NINT(MAX( DBLE( LOPT ), DBLE( WORK( 1 ) ) ))
+      LIOPT = NINT(MAX( DBLE( LIOPT ), DBLE( IWORK( 1 ) ) ))
 *
       IF( WANTZ .AND. INFO.EQ.0 ) THEN
 *
@@ -607,7 +607,7 @@
          END IF
       END IF
 *
-      WORK( 1 ) = LOPT
+      WORK( 1 ) = DBLE(LOPT)
       IWORK( 1 ) = LIOPT
 *
       RETURN
@@ -5306,7 +5306,7 @@
 *
       CALL DSYTRD( UPLO, N, A, LDA, W, WORK( INDE ), WORK( INDTAU ),
      $             WORK( INDWRK ), LLWORK, IINFO )
-      LOPT = 2*N + WORK( INDWRK )
+      LOPT = 2*N + NINT(WORK( INDWRK ))
 *
 *     For eigenvalues only, call DSTERF.  For eigenvectors, first call
 *     DSTEDC to generate the eigenvector matrix, WORK(INDWRK), of the
@@ -5329,7 +5329,7 @@
       IF( ISCALE.EQ.1 )
      $   CALL DSCAL( N, ONE / SIGMA, W, 1 )
 *
-      WORK( 1 ) = LOPT
+      WORK( 1 ) = DBLE(LOPT)
       IWORK( 1 ) = LIOPT
 *
       RETURN
@@ -7248,12 +7248,12 @@
          QTR = ONE / 4
          SAVEC = C
          C = DLAMC3( C, -A )
-         LBETA = C + QTR
+         LBETA = NINT(C + QTR)
 *
 *        Now determine whether rounding or chopping occurs,  by adding a
 *        bit  less  than  beta/2  and a  bit  more  than  beta/2  to  a.
 *
-         B = LBETA
+         B = DBLE(LBETA)
          F = DLAMC3( B / 2, -B / 100 )
          C = DLAMC3( F, A )
          IF( C.EQ.A ) THEN
@@ -7291,7 +7291,7 @@
    30    CONTINUE
          IF( C.EQ.ONE ) THEN
             LT = LT + 1
-            A = A*LBETA
+            A = A*DBLE(LBETA)
             C = DLAMC3( A, ONE )
             C = DLAMC3( C, -A )
             GO TO 30
@@ -23253,7 +23253,7 @@ CIBM           PREFER SCALAR
 *
             ALPHA = A( I, I+1 )
             CALL ZLARFG( I, ALPHA, A( 1, I+1 ), 1, TAUI )
-            E( I ) = ALPHA
+            E( I ) = DBLE(ALPHA)
 *
             IF( TAUI.NE.ZERO ) THEN
 *
@@ -23281,10 +23281,10 @@ CIBM           PREFER SCALAR
                A( I, I ) = DBLE( A( I, I ) )
             END IF
             A( I, I+1 ) = E( I )
-            D( I+1 ) = A( I+1, I+1 )
+            D( I+1 ) = DBLE(A( I+1, I+1 ))
             TAU( I ) = TAUI
    10    CONTINUE
-         D( 1 ) = A( 1, 1 )
+         D( 1 ) = DBLE(A( 1, 1 ))
       ELSE
 *
 *        Reduce the lower triangle of A
@@ -23297,7 +23297,7 @@ CIBM           PREFER SCALAR
 *
             ALPHA = A( I+1, I )
             CALL ZLARFG( N-I, ALPHA, A( MIN( I+2, N ), I ), 1, TAUI )
-            E( I ) = ALPHA
+            E( I ) = DBLE(ALPHA)
 *
             IF( TAUI.NE.ZERO ) THEN
 *
@@ -23326,10 +23326,10 @@ CIBM           PREFER SCALAR
                A( I+1, I+1 ) = DBLE( A( I+1, I+1 ) )
             END IF
             A( I+1, I ) = E( I )
-            D( I ) = A( I, I )
+            D( I ) = DBLE(A( I, I ))
             TAU( I ) = TAUI
    20    CONTINUE
-         D( N ) = A( N, N )
+         D( N ) = DBLE(A( N, N ))
       END IF
 *
       RETURN
@@ -23586,7 +23586,7 @@ CIBM           PREFER SCALAR
 *
             DO 10 J = I, I + NB - 1
                A( J-1, J ) = E( J-1 )
-               D( J ) = A( J, J )
+               D( J ) = DBLE(A( J, J ))
    10       CONTINUE
    20    CONTINUE
 *
@@ -23618,7 +23618,7 @@ CIBM           PREFER SCALAR
 *
             DO 30 J = I, I + NB - 1
                A( J+1, J ) = E( J )
-               D( J ) = A( J, J )
+               D( J ) = DBLE(A( J, J ))
    30       CONTINUE
    40    CONTINUE
 *
@@ -26828,7 +26828,7 @@ C                    DLARRF needs LWORK = 2*N
 *
                ALPHA = A( I-1, I )
                CALL ZLARFG( I-1, ALPHA, A( 1, I ), 1, TAU( I-1 ) )
-               E( I-1 ) = ALPHA
+               E( I-1 ) = DBLE(ALPHA)
                A( I-1, I ) = ONE
 *
 *              Compute W(1:i-1,i)
@@ -26882,7 +26882,7 @@ C                    DLARRF needs LWORK = 2*N
                ALPHA = A( I+1, I )
                CALL ZLARFG( N-I, ALPHA, A( MIN( I+2, N ), I ), 1,
      $                      TAU( I ) )
-               E( I ) = ALPHA
+               E( I ) = DBLE(ALPHA)
                A( I+1, I ) = ONE
 *
 *              Compute W(i+1:n,i)
@@ -28465,7 +28465,8 @@ C                    DLARRF needs LWORK = 2*N
      $                   MI, NB, NBMIN, NI, NQ, NW
 *     ..
 *     .. Local Arrays ..
-      COMPLEX*16         T( LDT, NBMAX )
+*      COMPLEX*16         T( LDT, NBMAX )
+      COMPLEX*16, DIMENSION(:,:), ALLOCATABLE::T
 *     ..
 *     .. External Functions ..
       LOGICAL            LSAME
@@ -28584,6 +28585,7 @@ C                    DLARRF needs LWORK = 2*N
             MI = M
          END IF
 *
+         ALLOCATE(T(LDT, NBMAX))
          DO 10 I = I1, I2, I3
             IB = MIN( NB, K-I+1 )
 *
@@ -28610,6 +28612,7 @@ C                    DLARRF needs LWORK = 2*N
      $                   IB, A( 1, I ), LDA, T, LDT, C, LDC, WORK,
      $                   LDWORK )
    10    CONTINUE
+         DEALLOCATE(T)
       END IF
       WORK( 1 ) = LWKOPT
       RETURN
@@ -28727,7 +28730,8 @@ C                    DLARRF needs LWORK = 2*N
      $                   LWKOPT, MI, NB, NBMIN, NI, NQ, NW
 *     ..
 *     .. Local Arrays ..
-      COMPLEX*16         T( LDT, NBMAX )
+*      COMPLEX*16         T( LDT, NBMAX )
+      COMPLEX*16, DIMENSION(:,:), ALLOCATABLE::T
 *     ..
 *     .. External Functions ..
       LOGICAL            LSAME
@@ -28843,6 +28847,7 @@ C                    DLARRF needs LWORK = 2*N
             IC = 1
          END IF
 *
+         ALLOCATE(T(LDT, NBMAX))
          DO 10 I = I1, I2, I3
             IB = MIN( NB, K-I+1 )
 *
@@ -28871,6 +28876,7 @@ C                    DLARRF needs LWORK = 2*N
      $                   IB, A( I, I ), LDA, T, LDT, C( IC, JC ), LDC,
      $                   WORK, LDWORK )
    10    CONTINUE
+         DEALLOCATE(T)
       END IF
       WORK( 1 ) = LWKOPT
       RETURN
@@ -55071,7 +55077,9 @@ C
             DO 70  I = 1, J-2
                TEMP = ABS( QG(I,J) )
                DWORK(I) = DWORK(I) + TEMP
-               DWORK(J-1) = DWORK(J-1) + TEMP
+               IF (J-1 .GT. 0) THEN
+                  DWORK(J-1) = DWORK(J-1) + TEMP
+               ENDIF
    70       CONTINUE
             IF ( J.LT.N+1 ) THEN
                SUM = DWORK(N+J)
@@ -55113,7 +55121,9 @@ C
             DO 140  I = 1, J-2
                TEMP = ABS( QG(I,J) )
                DWORK(I) = DWORK(I) + TEMP
-               DWORK(J-1) = DWORK(J-1) + TEMP
+               IF (J-1 .GT. 0) THEN
+                  DWORK(J-1) = DWORK(J-1) + TEMP
+               ENDIF
   140       CONTINUE
             IF ( J.GT.1 )
      $         DWORK(J-1) = DWORK(J-1) + ABS( QG(J-1,J) )
@@ -71786,8 +71796,9 @@ C
             G = E(J)
             JM1 = J - 1
 C
-            DO 190 K = 1, JM1
+            DO K = 1, JM1
                A(J,K) = A(J,K) + F * E(K) - G * A(I,K)
+            ENDDO
   190    CONTINUE
 C
   200    DO 210 K = 1, L
@@ -72246,7 +72257,7 @@ C
                CALL ZHSEQR( 'E', 'N', N, 1, N, A, LDA, W, VR, LDVR,
      $                WORK, -1, INFO )
             END IF
-            HSWORK = WORK( 1 )
+            HSWORK = NINT(DBLE(WORK( 1 )))
             MAXWRK = MAX( MAXWRK, HSWORK, MINWRK )
          END IF
          WORK( 1 ) = MAXWRK
@@ -73252,7 +73263,8 @@ C
 *
 *     .. Parameters ..
       INTEGER            NBMAX, LDT
-      PARAMETER          ( NBMAX = 64, LDT = NBMAX+1 )
+      PARAMETER          ( NBMAX = 64)
+      PARAMETER          ( LDT = NBMAX+1 )
       COMPLEX*16        ZERO, ONE
       PARAMETER          ( ZERO = ( 0.0D+0, 0.0D+0 ), 
      $                     ONE = ( 1.0D+0, 0.0D+0 ) )
@@ -73264,7 +73276,8 @@ C
       COMPLEX*16        EI
 *     ..
 *     .. Local Arrays ..
-      COMPLEX*16        T( LDT, NBMAX )
+      !COMPLEX*16        T( LDT, NBMAX )
+      COMPLEX*16, DIMENSION(:,:), ALLOCATABLE::T
 *     ..
 *     .. External Subroutines ..
       EXTERNAL           ZAXPY, ZGEHD2, ZGEMM, ZLAHR2, ZLARFB, ZTRMM,
@@ -73281,6 +73294,7 @@ C
 *
 *     Test the input parameters
 *
+
       INFO = 0
       NB = MIN( NBMAX, ILAENV( 1, 'ZGEHRD', N, ILO, IHI, -1 ) )
       LWKOPT = N*NB
@@ -73365,6 +73379,7 @@ C
 *
 *        Use blocked code
 *
+         ALLOCATE(T(LDT,NBMAX))
          DO 40 I = ILO, IHI - 1 - NX, NB
             IB = MIN( NB, IHI-I )
 *
@@ -73406,6 +73421,7 @@ C
      $                   IHI-I, N-I-IB+1, IB, A( I+1, I ), LDA, T, LDT,
      $                   A( I+1, I+IB ), LDA, WORK, LDWORK )
    40    CONTINUE
+         DEALLOCATE(T)
       END IF
 *
 *     Use unblocked code to reduce the rest of the matrix
@@ -73975,7 +73991,7 @@ C
      $            GO TO 40
                IF( I.LT.ILO )
      $            I = ILO - II
-               K = SCALE( I )
+               K = NINT(SCALE( I ))
                IF( K.EQ.I )
      $            GO TO 40
                CALL ZSWAP( M, V( I, 1 ), LDV, V( K, 1 ), LDV )
@@ -73989,7 +74005,7 @@ C
      $            GO TO 50
                IF( I.LT.ILO )
      $            I = ILO - II
-               K = SCALE( I )
+               K = NINT(SCALE( I ))
                IF( K.EQ.I )
      $            GO TO 50
                CALL ZSWAP( M, V( I, 1 ), LDV, V( K, 1 ), LDV )
@@ -78690,7 +78706,7 @@ C
      $                WORK, -1, INFO )
                END IF
             END IF
-            HSWORK = WORK( 1 )
+            HSWORK = NINT(DBLE(WORK( 1 )))
 *
             IF( ( .NOT.WANTVL ) .AND. ( .NOT.WANTVR ) ) THEN
                MINWRK = 2*N
@@ -79549,207 +79565,209 @@ C
 *
       END
 
-      subroutine zgeco(a,lda,n,ipvt,rcond,z)
-      integer lda,n,ipvt(1)
-      complex*16 a(lda,1),z(1)
-      double precision rcond
-c
-c     zgeco factors a complex*16 matrix by gaussian elimination
-c     and estimates the condition of the matrix.
-c
-c     if  rcond  is not needed, zgefa is slightly faster.
-c     to solve  a*x = b , follow zgeco by zgesl.
-c     to compute  inverse(a)*c , follow zgeco by zgesl.
-c     to compute  determinant(a) , follow zgeco by zgedi.
-c     to compute  inverse(a) , follow zgeco by zgedi.
-c
-c     on entry
-c
-c        a       complex*16(lda, n)
-c                the matrix to be factored.
-c
-c        lda     integer
-c                the leading dimension of the array  a .
-c
-c        n       integer
-c                the order of the matrix  a .
-c
-c     on return
-c
-c        a       an upper triangular matrix and the multipliers
-c                which were used to obtain it.
-c                the factorization can be written  a = l*u  where
-c                l  is a product of permutation and unit lower
-c                triangular matrices and  u  is upper triangular.
-c
-c        ipvt    integer(n)
-c                an integer vector of pivot indices.
-c
-c        rcond   double precision
-c                an estimate of the reciprocal condition of  a .
-c                for the system  a*x = b , relative perturbations
-c                in  a  and  b  of size  epsilon  may cause
-c                relative perturbations in  x  of size  epsilon/rcond .
-c                if  rcond  is so small that the logical expression
-c                           1.0 + rcond .eq. 1.0
-c                is true, then  a  may be singular to working
-c                precision.  in particular,  rcond  is zero  if
-c                exact singularity is detected or the estimate
-c                underflows.
-c
-c        z       complex*16(n)
-c                a work vector whose contents are usually unimportant.
-c                if  a  is close to a singular matrix, then  z  is
-c                an approximate null vector in the sense that
-c                norm(a*z) = rcond*norm(a)*norm(z) .
-c
-c     linpack. this version dated 08/14/78 .
-c     cleve moler, university of new mexico, argonne national lab.
-c
-c     subroutines and functions
-c
-c     linpack zgefa
-c     blas zaxpy,zdotc,zdscal,dzasum
-c     fortran dabs,dmax1,dcmplx,dconjg
-c
-c     internal variables
-c
-      complex*16 zdotc,ek,t,wk,wkm
-      double precision anorm,s,dzasum,sm,ynorm
-      integer info,j,k,kb,kp1,l
-c
-      complex*16 zdum,zdum1,zdum2,csign1
-      double precision cabs1
-      double precision dreal,dimag
-      complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
-      cabs1(zdum) = dabs(dreal(zdum)) + dabs(dimag(zdum))
-      csign1(zdum1,zdum2) = cabs1(zdum1)*(zdum2/cabs1(zdum2))
-c
-c     compute 1-norm of a
-c
-      anorm = 0.0d0
-      do 10 j = 1, n
-         anorm = dmax1(anorm,dzasum(n,a(1,j),1))
-   10 continue
-c
-c     factor
-c
-      call zgefa(a,lda,n,ipvt,info)
-c
-c     rcond = 1/(norm(a)*(estimate of norm(inverse(a)))) .
-c     estimate = norm(z)/norm(y) where  a*z = y  and  ctrans(a)*y = e .
-c     ctrans(a)  is the conjugate transpose of a .
-c     the components of  e  are chosen to cause maximum local
-c     growth in the elements of w  where  ctrans(u)*w = e .
-c     the vectors are frequently rescaled to avoid overflow.
-c
-c     solve ctrans(u)*w = e
-c
-      ek = (1.0d0,0.0d0)
-      do 20 j = 1, n
-         z(j) = (0.0d0,0.0d0)
-   20 continue
-      do 100 k = 1, n
-         if (cabs1(z(k)) .ne. 0.0d0) ek = csign1(ek,-z(k))
-         if (cabs1(ek-z(k)) .le. cabs1(a(k,k))) go to 30
-            s = cabs1(a(k,k))/cabs1(ek-z(k))
-            call zdscal(n,s,z,1)
-            ek = dcmplx(s,0.0d0)*ek
-   30    continue
-         wk = ek - z(k)
-         wkm = -ek - z(k)
-         s = cabs1(wk)
-         sm = cabs1(wkm)
-         if (cabs1(a(k,k)) .eq. 0.0d0) go to 40
-            wk = wk/dconjg(a(k,k))
-            wkm = wkm/dconjg(a(k,k))
-         go to 50
-   40    continue
-            wk = (1.0d0,0.0d0)
-            wkm = (1.0d0,0.0d0)
-   50    continue
-         kp1 = k + 1
-         if (kp1 .gt. n) go to 90
-            do 60 j = kp1, n
-               sm = sm + cabs1(z(j)+wkm*dconjg(a(k,j)))
-               z(j) = z(j) + wk*dconjg(a(k,j))
-               s = s + cabs1(z(j))
-   60       continue
-            if (s .ge. sm) go to 80
-               t = wkm - wk
-               wk = wkm
-               do 70 j = kp1, n
-                  z(j) = z(j) + t*dconjg(a(k,j))
-   70          continue
-   80       continue
-   90    continue
-         z(k) = wk
-  100 continue
-      s = 1.0d0/dzasum(n,z,1)
-      call zdscal(n,s,z,1)
-c
-c     solve ctrans(l)*y = w
-c
-      do 120 kb = 1, n
-         k = n + 1 - kb
-         if (k .lt. n) z(k) = z(k) + zdotc(n-k,a(k+1,k),1,z(k+1),1)
-         if (cabs1(z(k)) .le. 1.0d0) go to 110
-            s = 1.0d0/cabs1(z(k))
-            call zdscal(n,s,z,1)
-  110    continue
-         l = ipvt(k)
-         t = z(l)
-         z(l) = z(k)
-         z(k) = t
-  120 continue
-      s = 1.0d0/dzasum(n,z,1)
-      call zdscal(n,s,z,1)
-c
-      ynorm = 1.0d0
-c
-c     solve l*v = y
-c
-      do 140 k = 1, n
-         l = ipvt(k)
-         t = z(l)
-         z(l) = z(k)
-         z(k) = t
-         if (k .lt. n) call zaxpy(n-k,t,a(k+1,k),1,z(k+1),1)
-         if (cabs1(z(k)) .le. 1.0d0) go to 130
-            s = 1.0d0/cabs1(z(k))
-            call zdscal(n,s,z,1)
-            ynorm = s*ynorm
-  130    continue
-  140 continue
-      s = 1.0d0/dzasum(n,z,1)
-      call zdscal(n,s,z,1)
-      ynorm = s*ynorm
-c
-c     solve  u*z = v
-c
-      do 160 kb = 1, n
-         k = n + 1 - kb
-         if (cabs1(z(k)) .le. cabs1(a(k,k))) go to 150
-            s = cabs1(a(k,k))/cabs1(z(k))
-            call zdscal(n,s,z,1)
-            ynorm = s*ynorm
-  150    continue
-         if (cabs1(a(k,k)) .ne. 0.0d0) z(k) = z(k)/a(k,k)
-         if (cabs1(a(k,k)) .eq. 0.0d0) z(k) = (1.0d0,0.0d0)
-         t = -z(k)
-         call zaxpy(k-1,t,a(1,k),1,z(1),1)
-  160 continue
-c     make znorm = 1.0
-      s = 1.0d0/dzasum(n,z,1)
-      call zdscal(n,s,z,1)
-      ynorm = s*ynorm
-c
-      if (anorm .ne. 0.0d0) rcond = ynorm/anorm
-      if (anorm .eq. 0.0d0) rcond = 0.0d0
-      return
-      end
+*******THIS FUNCTION IS NOT USED ANYWHERE AND SEEMS TO HAVE POORLY
+*******DEFINED VARIABLES!
+!      subroutine zgeco(a,lda,n,ipvt,rcond,z)
+!      integer lda,n,ipvt(1)
+!      complex*16 a(lda,1),z(1)
+!      double precision rcond
+!c
+!c     zgeco factors a complex*16 matrix by gaussian elimination
+!c     and estimates the condition of the matrix.
+!c
+!c     if  rcond  is not needed, zgefa is slightly faster.
+!c     to solve  a*x = b , follow zgeco by zgesl.
+!c     to compute  inverse(a)*c , follow zgeco by zgesl.
+!c     to compute  determinant(a) , follow zgeco by zgedi.
+!c     to compute  inverse(a) , follow zgeco by zgedi.
+!c
+!c     on entry
+!c
+!c        a       complex*16(lda, n)
+!c                the matrix to be factored.
+!c
+!c        lda     integer
+!c                the leading dimension of the array  a .
+!c
+!c        n       integer
+!c                the order of the matrix  a .
+!c
+!c     on return
+!c
+!c        a       an upper triangular matrix and the multipliers
+!c                which were used to obtain it.
+!c                the factorization can be written  a = l*u  where
+!c                l  is a product of permutation and unit lower
+!c                triangular matrices and  u  is upper triangular.
+!c
+!c        ipvt    integer(n)
+!c                an integer vector of pivot indices.
+!c
+!c        rcond   double precision
+!c                an estimate of the reciprocal condition of  a .
+!c                for the system  a*x = b , relative perturbations
+!c                in  a  and  b  of size  epsilon  may cause
+!c                relative perturbations in  x  of size  epsilon/rcond .
+!c                if  rcond  is so small that the logical expression
+!c                           1.0 + rcond .eq. 1.0
+!c                is true, then  a  may be singular to working
+!c                precision.  in particular,  rcond  is zero  if
+!c                exact singularity is detected or the estimate
+!c                underflows.
+!c
+!c        z       complex*16(n)
+!c                a work vector whose contents are usually unimportant.
+!c                if  a  is close to a singular matrix, then  z  is
+!c                an approximate null vector in the sense that
+!c                norm(a*z) = rcond*norm(a)*norm(z) .
+!c
+!c     linpack. this version dated 08/14/78 .
+!c     cleve moler, university of new mexico, argonne national lab.
+!c
+!c     subroutines and functions
+!c
+!c     linpack zgefa
+!c     blas zaxpy,zdotc,zdscal,dzasum
+!c     fortran dabs,dmax1,dcmplx,dconjg
+!c
+!c     internal variables
+!c
+!      complex*16 zdotc,ek,t,wk,wkm
+!      double precision anorm,s,dzasum,sm,ynorm
+!      integer info,j,k,kb,kp1,l
+!c
+!      complex*16 zdum,zdum1,zdum2,csign1
+!      double precision cabs1
+!      double precision dreal,dimag
+!      complex*16 zdumr,zdumi
+!      dreal(zdumr) = zdumr
+!      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
+!      cabs1(zdum) = dabs(dreal(zdum)) + dabs(dimag(zdum))
+!      csign1(zdum1,zdum2) = cabs1(zdum1)*(zdum2/cabs1(zdum2))
+!c
+!c     compute 1-norm of a
+!c
+!      anorm = 0.0d0
+!      do 10 j = 1, n
+!         anorm = dmax1(anorm,dzasum(n,a(1,j),1))
+!   10 continue
+!c
+!c     factor
+!c
+!      call zgefa(a,lda,n,ipvt,info)
+!c
+!c     rcond = 1/(norm(a)*(estimate of norm(inverse(a)))) .
+!c     estimate = norm(z)/norm(y) where  a*z = y  and  ctrans(a)*y = e .
+!c     ctrans(a)  is the conjugate transpose of a .
+!c     the components of  e  are chosen to cause maximum local
+!c     growth in the elements of w  where  ctrans(u)*w = e .
+!c     the vectors are frequently rescaled to avoid overflow.
+!c
+!c     solve ctrans(u)*w = e
+!c
+!      ek = (1.0d0,0.0d0)
+!      do 20 j = 1, n
+!         z(j) = (0.0d0,0.0d0)
+!   20 continue
+!      do 100 k = 1, n
+!         if (cabs1(z(k)) .ne. 0.0d0) ek = csign1(ek,-z(k))
+!         if (cabs1(ek-z(k)) .le. cabs1(a(k,k))) go to 30
+!            s = cabs1(a(k,k))/cabs1(ek-z(k))
+!            call zdscal(n,s,z,1)
+!            ek = dcmplx(s,0.0d0)*ek
+!   30    continue
+!         wk = ek - z(k)
+!         wkm = -ek - z(k)
+!         s = cabs1(wk)
+!         sm = cabs1(wkm)
+!         if (cabs1(a(k,k)) .eq. 0.0d0) go to 40
+!            wk = wk/dconjg(a(k,k))
+!            wkm = wkm/dconjg(a(k,k))
+!         go to 50
+!   40    continue
+!            wk = (1.0d0,0.0d0)
+!            wkm = (1.0d0,0.0d0)
+!   50    continue
+!         kp1 = k + 1
+!         if (kp1 .gt. n) go to 90
+!            do 60 j = kp1, n
+!               sm = sm + cabs1(z(j)+wkm*dconjg(a(k,j)))
+!               z(j) = z(j) + wk*dconjg(a(k,j))
+!               s = s + cabs1(z(j))
+!   60       continue
+!            if (s .ge. sm) go to 80
+!               t = wkm - wk
+!               wk = wkm
+!               do 70 j = kp1, n
+!                  z(j) = z(j) + t*dconjg(a(k,j))
+!   70          continue
+!   80       continue
+!   90    continue
+!         z(k) = wk
+!  100 continue
+!      s = 1.0d0/dzasum(n,z,1)
+!      call zdscal(n,s,z,1)
+!c
+!c     solve ctrans(l)*y = w
+!c
+!      do 120 kb = 1, n
+!         k = n + 1 - kb
+!         if (k .lt. n) z(k) = z(k) + zdotc(n-k,a(k+1,k),1,z(k+1),1)
+!         if (cabs1(z(k)) .le. 1.0d0) go to 110
+!            s = 1.0d0/cabs1(z(k))
+!            call zdscal(n,s,z,1)
+!  110    continue
+!         l = ipvt(k)
+!         t = z(l)
+!         z(l) = z(k)
+!         z(k) = t
+!  120 continue
+!      s = 1.0d0/dzasum(n,z,1)
+!      call zdscal(n,s,z,1)
+!c
+!      ynorm = 1.0d0
+!c
+!c     solve l*v = y
+!c
+!      do 140 k = 1, n
+!         l = ipvt(k)
+!         t = z(l)
+!         z(l) = z(k)
+!         z(k) = t
+!         if (k .lt. n) call zaxpy(n-k,t,a(k+1,k),1,z(k+1),1)
+!         if (cabs1(z(k)) .le. 1.0d0) go to 130
+!            s = 1.0d0/cabs1(z(k))
+!            call zdscal(n,s,z,1)
+!            ynorm = s*ynorm
+!  130    continue
+!  140 continue
+!      s = 1.0d0/dzasum(n,z,1)
+!      call zdscal(n,s,z,1)
+!      ynorm = s*ynorm
+!c
+!c     solve  u*z = v
+!c
+!      do 160 kb = 1, n
+!         k = n + 1 - kb
+!         if (cabs1(z(k)) .le. cabs1(a(k,k))) go to 150
+!            s = cabs1(a(k,k))/cabs1(z(k))
+!            call zdscal(n,s,z,1)
+!            ynorm = s*ynorm
+!  150    continue
+!         if (cabs1(a(k,k)) .ne. 0.0d0) z(k) = z(k)/a(k,k)
+!         if (cabs1(a(k,k)) .eq. 0.0d0) z(k) = (1.0d0,0.0d0)
+!         t = -z(k)
+!         call zaxpy(k-1,t,a(1,k),1,z(1),1)
+!  160 continue
+!c     make znorm = 1.0
+!      s = 1.0d0/dzasum(n,z,1)
+!      call zdscal(n,s,z,1)
+!      ynorm = s*ynorm
+!c
+!      if (anorm .ne. 0.0d0) rcond = ynorm/anorm
+!      if (anorm .eq. 0.0d0) rcond = 0.0d0
+!      return
+!      end
 
       subroutine zgedi(a,lda,n,ipvt,det,work,job)
       integer lda,n,ipvt(1),job
@@ -79818,8 +79836,8 @@ c
       double precision cabs1
       double precision dreal,dimag
       complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
+      dreal(zdumr) = dble(zdumr)
+      dimag(zdumi) = dble((0.0d0,-1.0d0)*zdumi)
       cabs1(zdum) = dabs(dreal(zdum)) + dabs(dimag(zdum))
 c
 c     compute determinant
@@ -79944,8 +79962,8 @@ c
       double precision cabs1
       double precision dreal,dimag
       complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
+      dreal(zdumr) = dble(zdumr)
+      dimag(zdumi) = dble((0.0d0,-1.0d0)*zdumi)
       cabs1(zdum) = dabs(dreal(zdum)) + dabs(dimag(zdum))
 c
 c     gaussian elimination with partial pivoting
@@ -80086,7 +80104,7 @@ c
       END IF
 *
       IF( N.EQ.1 ) THEN
-         W( 1 ) = A( 1, 1 )
+         W( 1 ) = DBLE(A( 1, 1 ))
          WORK( 1 ) = 1
          IF( WANTZ )
      $      A( 1, 1 ) = CONE
@@ -81494,12 +81512,12 @@ c
       IF( N.EQ.1 ) THEN
          IF( ALLEIG .OR. INDEIG ) THEN
             M = 1
-            W( 1 ) = A( 1, 1 )
+            W( 1 ) = DBLE(A( 1, 1 ))
          ELSE IF( VALEIG ) THEN
             IF( VL.LT.DBLE( A( 1, 1 ) ) .AND. VU.GE.DBLE( A( 1, 1 ) ) )
      $           THEN
                M = 1
-               W( 1 ) = A( 1, 1 )
+               W( 1 ) = DBLE(A( 1, 1 ))
             END IF
          END IF
          IF( WANTZ )

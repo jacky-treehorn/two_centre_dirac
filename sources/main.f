@@ -54,7 +54,7 @@ c     must be constant there)
       common /input_directory/ inp_dir
       logical Manual_Coeff_Input,dkb,Sudden_approx,
      &state_range_input,Plots_wanted,Recoil_on_off,
-     &init_recoil,Manual_ncont_states,mkdirs,dipping_wave_allocated,
+     &init_recoil,Manual_ncont_states,dipping_wave_allocated,!mkdirs,
      &unfreeze_basis
       inp_dir = 'input_output/'
       call factor()
@@ -62,8 +62,10 @@ c     must be constant there)
       dipping_wave_allocated = .false.
       unfreeze_basis = .false.
       energy_lowest_bound = 1.d0
-      mkdirs=makedirqq('Coeffs')
-      mkdirs=makedirqq('Mat_norms')
+      !mkdirs=makedirqq('Coeffs')
+      !mkdirs=makedirqq('Mat_norms')
+      CALL SYSTEM("mkdir Coeffs")
+      CALL SYSTEM("mkdir Mat_norms")
 
       open(1,file=inp_dir//'inp.inp',status='old')
       read(1,*) z_nuc1,r_sq1
@@ -199,8 +201,7 @@ c      if(Nuc_model.eq.3)then
 
       if(dsqrt(bsh**2-dsh)-bsh.lt.0.d0)then
          cf1=1.d0
-         write(*,*) 'ERROR 1 IN CF'
-         pause
+         write(*,*) 'ERROR 1 IN CF, SET TO 1'
       else
          cf1=dsqrt(dsqrt(bsh**2-dsh)-bsh)
       endif
@@ -210,8 +211,7 @@ c      if(Nuc_model.eq.3)then
 
       if(dsqrt(bsh**2-dsh)-bsh.lt.0.d0) then
          cf2=1.d0
-         write(*,*) 'ERROR 2 IN CF'
-         pause
+         write(*,*) 'ERROR 2 IN CF, LESS THAN 0, SET TO 1'
       else
          cf2=dsqrt(dsqrt(bsh**2-dsh)-bsh)
       endif
@@ -223,14 +223,14 @@ c     call test_potentials(nkap)
 c     For the case of homogeneously charged sphere we have to
 c     multiply root-mean-square radius by sqrt(5.d0/3.d0)
 
-      if(Nuc_model.gt.1) then
-         r0=r0*dsqrt(5.d0/3.d0)
-      endif
+!      if(Nuc_model.gt.1) then
+!         r0=r0*dsqrt(5.d0/3.d0)
+!      endif
 
       nu=nm+ns+2
       az1=z_nuc1/c
       az2=z_nuc2/c
-      i_xi_start=(xi_stepslower+1)*xi_range*1.d0/xi_stepsupper
+c      i_xi_start=(xi_stepslower+1)*xi_range*1.d0/xi_stepsupper
       call date_and_time(c_date,c_time,c_zone, c_ivalues)
       rmin=rmin1
       rmax=rmax1
@@ -1180,7 +1180,7 @@ c        coeff=coeff/dsqrt(vectornorm_1)
                   write(*,*) 'something goes wrong with num'
                   write(*,*) xx,plot(1,num,j)
                   write(*,*) num,j
-                  pause
+                  write(*,*) 'Error in function draw_sigma'
                 endif
 
                 plot(1,num,j)=xx
@@ -1302,7 +1302,7 @@ c        coeff=coeff/dsqrt(vectornorm_1)
                   write(*,*) 'something goes wrong with num'
                   write(*,*) xx,plot(1,num,j)
                   write(*,*) num,j
-                  pause
+                  write(*,*) 'Error in function draw_sigma_raw'
                 endif
 
                 plot(1,num,j)=xx
@@ -1357,7 +1357,7 @@ c               write(12,*) x,y,dlog(dens)
 
       deallocate(plot)
  11   format(6(e12.5,1x))
- 1    format(e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6)
+c 1    format(e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6)
       return
       end
 
@@ -1645,7 +1645,7 @@ cc      write(*,*) 'EXITING R_DIAG'
      &                   WORK, LWORK,
      &                   RWORK, IWORK, IFAIL, INFO )
 
-      aa=WORK(1)
+      aa=dble(WORK(1))
       LWORK=idint(aa)
       deallocate(WORK)
       allocate(WORK(LWORK))
@@ -1671,6 +1671,7 @@ c      write(*,*) M,'found vectors'
       character*1 JOBZ,RANGE,UPLO
       complex*16, dimension(:),allocatable:: WORK
       real*8, dimension(:),allocatable:: RWORK
+      integer LWORK
 
       LWORK=2*nm
       allocate(WORK(LWORK))
@@ -1697,7 +1698,7 @@ c      write(*,*) M,'found vectors'
      &                   WORK, LWORK,
      &                   RWORK, LRWORK, IWORK, LIWORK, INFO )
 
-      aa=WORK(1)
+      aa=dble(WORK(1))
       LWORK=idint(aa)
       LRWORK=idint(RWORK(1))
       LIWORK=IWORK(1)
@@ -1755,7 +1756,7 @@ c      write(*,*) M,'found vectors'
      &                   WORK, LWORK,
      &                   RWORK, LRWORK, IWORK, LIWORK, INFO )
 
-      aa=WORK(1)
+      aa=dble(WORK(1))
       LWORK=idint(aa)
       LRWORK=idint(RWORK(1))
       LIWORK=IWORK(1)
@@ -1787,20 +1788,20 @@ c      write(*,*) M,'found vectors'
       integer num_st(-nkap:nkap,2*nm),dist_as_integer
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
       real*8, dimension(:,:),allocatable:: wcf
-      character*5 dist
+      character*5 dist_string
       allocate (wcf(2*nm,-nkap:nkap))
       wcf=0.d0
 
       dist_as_integer=int(2.d0*distance/0.0025896063d0)
-      write(dist,173)dist_as_integer
+      write(dist_string,173)dist_as_integer
   173 format(I5.5)
 
       kk=-1
-      open(1,file='plot_rad_ground_'//dist//'.dat')
+      open(1,file='plot_rad_ground_'//dist_string//'.dat')
       jj=1
       do while(e(jj,kk).lt.-1.d0)
         jj=jj+1
@@ -1812,7 +1813,7 @@ c      write(*,*) M,'found vectors'
 
       close(1)
 
-      open(1,file='plot_rad_2s_'//dist//'.dat')
+      open(1,file='plot_rad_2s_'//dist_string//'.dat')
       jj=jj+1
       write(1,*) '# energy',e(jj,kk),'number',jj
 
@@ -1820,7 +1821,7 @@ c      write(*,*) M,'found vectors'
       close(1)
 
       kk=1
-      open(1,file='plot_rad_2p1ground_'//dist//'.dat')
+      open(1,file='plot_rad_2p1ground_'//dist_string//'.dat')
       jj=1
       do while(e(jj,kk).lt.-1.d0)
         jj=jj+1
@@ -1829,14 +1830,14 @@ c      write(*,*) M,'found vectors'
       call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
       close(1)
 
-      open(1,file='plot_rad_2p1_'//dist//'.dat')
+      open(1,file='plot_rad_2p1_'//dist_string//'.dat')
       jj=jj+1
       write(1,*) '# energy',e(jj,kk),'number',jj
       call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
       close(1)
 
       kk=-2
-      open(1,file='plot_rad_2p3ground_'//dist//'.dat')
+      open(1,file='plot_rad_2p3ground_'//dist_string//'.dat')
       jj=1
       do while(e(jj,kk).lt.-1.d0)
         jj=jj+1
@@ -1845,12 +1846,12 @@ c      write(*,*) M,'found vectors'
       call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
       close(1)
 
-      open(11,file='dens_1sigma_'//dist//'.dat')
-      open(12,file='dens_log_1sigma_'//dist//'.dat')
-      open(511,file='dens_1sigma_'//dist//'_raw.dat')
-      open(512,file='dens_log_1sigma_'//dist//'_raw.dat')
-      open(1,file='plot_1sigma_'//dist//'.dat')
-      open(2,file='states_1sigma_'//dist//'.dat')
+      open(11,file='dens_1sigma_'//dist_string//'.dat')
+      open(12,file='dens_log_1sigma_'//dist_string//'.dat')
+      open(511,file='dens_1sigma_'//dist_string//'_raw.dat')
+      open(512,file='dens_log_1sigma_'//dist_string//'_raw.dat')
+      open(1,file='plot_1sigma_'//dist_string//'.dat')
+      open(2,file='states_1sigma_'//dist_string//'.dat')
       write(2,*) '#coe, N,kap,ene'
 
       jj=1
@@ -1879,7 +1880,7 @@ c      write(*,*) M,'found vectors'
         enddo
       enddo
 
-      open(3,file='states_1sigma_'//dist//'.dat')
+      open(3,file='states_1sigma_'//dist_string//'.dat')
       write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
       close(3)
       call draw_sigma(nm,nkap,nu,tknot,wcf)
@@ -1893,13 +1894,13 @@ c      write(*,*) M,'found vectors'
       close(12)
       close(511)
       close(512)
-      open(11,file='dens_2sigma_'//dist//'.dat')
-      open(12,file='dens_log_2sigma_'//dist//'.dat')
-      open(511,file='dens_2sigma_'//dist//'_raw.dat')
-      open(512,file='dens_log_2sigma_'//dist//'_raw.dat')
-      open(2,file='wave_2sigma_'//dist//'.dat')
+      open(11,file='dens_2sigma_'//dist_string//'.dat')
+      open(12,file='dens_log_2sigma_'//dist_string//'.dat')
+      open(511,file='dens_2sigma_'//dist_string//'_raw.dat')
+      open(512,file='dens_log_2sigma_'//dist_string//'_raw.dat')
+      open(2,file='wave_2sigma_'//dist_string//'.dat')
       write(2,*) '#coe, N,kap,parity,ene'
-      open(1,file='plot_2sigma_'//dist//'.dat')
+      open(1,file='plot_2sigma_'//dist_string//'.dat')
       jj=jj+1
 
       write(1,*) '# energy',eigval(jj),'number',jj
@@ -1923,7 +1924,7 @@ c      write(*,*) M,'found vectors'
         enddo
       enddo
 
-      open(3,file='wave_2sigma_'//dist//'.dat')
+      open(3,file='wave_2sigma_'//dist_string//'.dat')
       write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
       close(3)
       call draw_sigma(nm,nkap,nu,tknot,wcf)
@@ -1938,13 +1939,13 @@ c      write(*,*) M,'found vectors'
       close(12)
       close(511)
       close(512)
-      open(11,file='dens_3sigma_'//dist//'.dat')
-      open(12,file='dens_log_3sigma_'//dist//'.dat')
-      open(511,file='dens_3sigma_'//dist//'_raw.dat')
-      open(512,file='dens_log_3sigma_'//dist//'_raw.dat')
-      open(2,file='states_3sigma_'//dist//'.dat')
+      open(11,file='dens_3sigma_'//dist_string//'.dat')
+      open(12,file='dens_log_3sigma_'//dist_string//'.dat')
+      open(511,file='dens_3sigma_'//dist_string//'_raw.dat')
+      open(512,file='dens_log_3sigma_'//dist_string//'_raw.dat')
+      open(2,file='states_3sigma_'//dist_string//'.dat')
       write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_3sigma_'//dist//'.dat')
+      open(1,file='plot_3sigma_'//dist_string//'.dat')
       jj=jj+1
 
       write(1,*) '# energy',eigval(jj),'number',jj
@@ -1968,7 +1969,7 @@ c      write(*,*) M,'found vectors'
         enddo
       enddo
 
-      open(3,file='wave_3sigma_'//dist//'.dat')
+      open(3,file='wave_3sigma_'//dist_string//'.dat')
       write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
       close(3)
       call draw_sigma(nm,nkap,nu,tknot,wcf)
@@ -1983,13 +1984,13 @@ c      write(*,*) M,'found vectors'
       close(12)
       close(511)
       close(512)
-      open(11,file='dens_4sigma_'//dist//'.dat')
-      open(12,file='dens_log_4sigma_'//dist//'.dat')
-      open(511,file='dens_4sigma_'//dist//'_raw.dat')
-      open(512,file='dens_log_4sigma_'//dist//'_raw.dat')
-      open(2,file='states_4sigma_'//dist//'.dat')
+      open(11,file='dens_4sigma_'//dist_string//'.dat')
+      open(12,file='dens_log_4sigma_'//dist_string//'.dat')
+      open(511,file='dens_4sigma_'//dist_string//'_raw.dat')
+      open(512,file='dens_log_4sigma_'//dist_string//'_raw.dat')
+      open(2,file='states_4sigma_'//dist_string//'.dat')
       write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_4sigma_'//dist//'.dat')
+      open(1,file='plot_4sigma_'//dist_string//'.dat')
       jj=jj+1
 
       write(1,*) '# energy',eigval(jj),'number',jj
@@ -2013,7 +2014,7 @@ c      write(*,*) M,'found vectors'
         enddo
       enddo
 
-      open(3,file='wave_4sigma_'//dist//'.dat')
+      open(3,file='wave_4sigma_'//dist_string//'.dat')
       write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
       close(3)
       call draw_sigma(nm,nkap,nu,tknot,wcf)
@@ -2029,14 +2030,15 @@ c      write(*,*) M,'found vectors'
       return
       end
 
-      subroutine write_output(ns,nstates,nm,nkap,num_st,nu,
+      subroutine write_output(ns_in,nstates,nm,nkap,num_st,nu,
      &wave,e,tknot,eigval,eigvec)
+      include 'inc.par'
       real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
      &eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm)
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
 
@@ -2060,7 +2062,7 @@ c      write(*,*) M,'found vectors'
       close(1)
 
       open(1,file='parameters.out')
-      write(1,*) ns,nstates,nm,nkap,nu,amu,r01,r02,distance,
+      write(1,*) ns_in,nstates,nm,nkap,nu,amu,r01,r02,distance,
      &z_nuc1,az1,z_nuc2,az2,nuc_model
       close(1)
       return
@@ -2074,7 +2076,7 @@ c      write(*,*) M,'found vectors'
       integer num_st(-nkap:nkap,2*nm),dist_as_integer
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
       real*8, dimension(:,:),allocatable:: wcf
@@ -2317,14 +2319,15 @@ c      write(*,*) M,'found vectors'
       return
       end
 
-      subroutine write_output_even(ns,nstates,nm,nkap,num_st,nu,
+      subroutine write_output_even(ns_in,nstates,nm,nkap,num_st,nu,
      &wave,e,tknot,eigval,eigvec)
+     include 'inc.par'
       real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
      &eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm)
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
 
@@ -2348,7 +2351,7 @@ c      write(*,*) M,'found vectors'
       close(1)
 
       open(1,file='parameters.out')
-      write(1,*) ns,nstates,nm,nkap,nu,amu,r01,r02,distance,
+      write(1,*) ns_in,nstates,nm,nkap,nu,amu,r01,r02,distance,
      &z_nuc1,az1,z_nuc2,az2,nuc_model
       close(1)
       return
@@ -2362,7 +2365,7 @@ c      write(*,*) M,'found vectors'
       integer num_st(-nkap:nkap,2*nm),dist_as_integer
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
       real*8, dimension(:,:),allocatable:: wcf
@@ -2560,11 +2563,12 @@ c      write(*,*) M,'found vectors'
 
       subroutine write_output_odd(nstates,nm,nkap,num_st,
      &eigval,eigvec)
+     include 'inc.par'
       real*8 eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm)
       common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
 

@@ -18,8 +18,11 @@ c      order of integration for the second integral in Uehling term
        parameter (N_int=8)
 c      number of points for interpolation
 
-       parameter(c=137.03599911d0)		
+       parameter(c=137.03599911d0)
 c      1/fine stucture constant
 
-       parameter(pi=3.1415926535897932385d0)	
+       parameter(pi=3.1415926535897932385d0)
        parameter(erf_faktor=1.265969d0)
+
+       parameter(pe_massratio=1836.15267245d0)
+c      proton electron mass ratio
