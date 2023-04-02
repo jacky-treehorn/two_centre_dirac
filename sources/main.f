@@ -64,8 +64,8 @@ c     must be constant there)
       energy_lowest_bound = 1.d0
       !mkdirs=makedirqq('Coeffs')
       !mkdirs=makedirqq('Mat_norms')
-      CALL SYSTEM("mkdir Coeffs")
-      CALL SYSTEM("mkdir Mat_norms")
+      CALL SYSTEM("mkdir -p Coeffs")
+      CALL SYSTEM("mkdir -p Mat_norms")
 
       open(1,file=inp_dir//'inp.inp',status='old')
       read(1,*) z_nuc1,r_sq1

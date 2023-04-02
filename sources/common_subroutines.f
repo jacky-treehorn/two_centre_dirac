@@ -3527,7 +3527,7 @@ ccc endif
       common /momentum_projection/ amu,amj_max
 
       !mkdirs=makedirqq('PRJ')
-      CALL SYSTEM("mkdir PRJ")
+      CALL SYSTEM("mkdir -p PRJ")
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -3781,7 +3781,7 @@ c      enddo
       common /momentum_projection/ amu,amj_max
 
       !mkdirs=makedirqq('PRJ')
-      CALL SYSTEM("mkdir PRJ")
+      CALL SYSTEM("mkdir -p PRJ")
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -4023,7 +4023,7 @@ c      enddo
       common /momentum_projection/ amu,amj_max
 
       !mkdirs=makedirqq('PRJ')
-      CALL SYSTEM("mkdir PRJ")
+      CALL SYSTEM("mkdir -p PRJ")
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -5948,7 +5948,7 @@ c         write(*,*)j,el(j)
       common /Barycentres/ RadiusOne,RadiusTwo
 
       !mkdirs=makedirqq('WF')
-      CALL SYSTEM("mkdir WF")
+      CALL SYSTEM("mkdir -p WF")
 
       do i_nst=1,nstates
         do kk=-nkap,nkap
@@ -6127,7 +6127,7 @@ C     FULL WAVEFUNCTION SAMPLING
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
-      CALL SYSTEM("mkdir WF")
+      CALL SYSTEM("mkdir -p WF")
 
       abstand=rmax*0.5d0
       lstep=1
@@ -6347,7 +6347,7 @@ c     &      (Sample_point**2+1.d0)
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
-      CALL SYSTEM("mkdir WF")
+      CALL SYSTEM("mkdir -p WF")
 
       sampl_point=0.d0
       swapover=.false.
@@ -8827,7 +8827,7 @@ c      endif
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
-      CALL SYSTEM("mkdir WF")
+      CALL SYSTEM("mkdir -p WF")
 
       a_IND=RadiusOne+RadiusTwo
       allocate(abstand(nstates))
@@ -9257,7 +9257,7 @@ c         df_sum(i)=dabs(df_sum(i))
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
-      CALL SYSTEM("mkdir WF")
+      CALL SYSTEM("mkdir -p WF")
 
       a_IND=RadiusOne+RadiusTwo
       abstand=rmax*0.5d0/(z_nuc1+z_nuc2)**0.25d0
@@ -9658,7 +9658,7 @@ c     &      wfgtotal**2+wfftotal**2+wfgtotal1**2+wfftotal1**2
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
-      CALL SYSTEM("mkdir WF")
+      CALL SYSTEM("mkdir -p WF")
 
       a_IND=RadiusOne+RadiusTwo
       abstand=rmax*0.5d0/(z_nuc1+z_nuc2)**0.25d0
