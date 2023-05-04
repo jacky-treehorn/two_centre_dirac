@@ -752,11 +752,10 @@ C           This function redefines nsto=2*n_jstates*nsto
             if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
      &      .lt.0.d0))then
               interactionMat(i,j) = 0
-            else
-c             Make vacuum states non interacting.
-              if((all_eigval_upshifted(i).lt.0.d0) .and. (i.ne.j))then
-                interactionMat(i,j) = 0
-              endif
+            endif
+c           Make vacuum states non interacting.
+            if((all_eigval_upshifted(i).lt.0.d0) .and. (i.ne.j))then
+              interactionMat(i,j) = 0
             endif
           enddo
         enddo
@@ -799,6 +798,8 @@ c       Except when the ground state dips into the neg. continuum.
             summe=summe+dd(i,j)
           enddo
           ddmatnorm(i)=summe
+          ! Artificially make dd unitary
+          dd(i,:)=dd(i,:)/cdabs(summe)
         enddo
         ddmatnorm_1=maxval(cdabs(ddmatnorm))
 
