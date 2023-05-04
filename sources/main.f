@@ -45,7 +45,7 @@ c     must be constant there)
      &c_ivalues(8)
       complex*16 summe
       character*2 How_many_kappas
-      character*3 en_eval1_fileoutput,en_eval1j_fileoutput
+      character*4 en_eval1_fileoutput,en_eval1j_fileoutput
       character*4 Charge_ofnuc_1,Charge_ofnuc_2,How_fast
       character*8 c_date
       character(len=:), allocatable:: status_q
@@ -134,6 +134,7 @@ c      end select
       read(1,*) wavenumb,amplitude
       close(1)
 
+      occupancy_neg_cont_init=0.d0
       aNat_unit_Elec_field=1.32329d18/dsqrt(c)
       permittivity= 8.8541878176d-12
       speed_of_light=299792458d0
@@ -144,7 +145,6 @@ c      end select
       else
          amplitude=E_amp/aNat_unit_Elec_field/wavenumb
       endif
-
       open(1,file=inp_dir//'nm.inp',status='old')
       read(1,*) nm
       close(1)
@@ -858,7 +858,7 @@ c       Except when the ground state dips into the neg. continuum.
         endif
         if ((energy_lowest_bound .lt. -1.d0) .or. unfreeze_basis)then
           allocate(projMatMultipole(nstates,nstates))
-          if(z_nuc1.eq.z_nuc2)then
+          if(z_nuc1.ne.z_nuc2)then
             call projection_matrix_frozen_basis(nstates,nm,
      &      nkap,alt_dmat,wave_new,wave_new_at_dip,projMatMultipole)
           else
@@ -935,10 +935,10 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
           do i=1,min(nste,nsto)
             en_eval1=2*i-1
             write(en_eval1_fileoutput, 74)en_eval1
-   74       format(I3.3)
+   74       format(I4.4)
             en_eval1j=2*i
             write(en_eval1j_fileoutput, 75)en_eval1j
-   75       format(I3.3)
+   75       format(I4.4)
             if(ii_xi.eq.xi_stepslower)then
               allocate(character(len=7)::status_q)
               status_q='replace'
@@ -1073,6 +1073,11 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
           enddo
           deallocate(eigval_o)
         endif
+        if (ii_xi .eq. xi_stepslower)then
+          occupancy_neg_cont_init = Prob_electron_creation
+        endif
+        Prob_electron_creation=occupancy_neg_cont_init-
+     &  Prob_electron_creation
 
         if (ii_xi.ne. 0)then
           write(127,*)(ii_xi/abs(ii_xi))*
