@@ -240,7 +240,7 @@ c      i_xi_start=(xi_stepslower+1)*xi_range*1.d0/xi_stepsupper
 
       open(333,file='Mat_norms/D_Mat_Norm.dat')
       allocate(number_states_perm(2,-nkap:nkap))
-
+      start_occupancy = 0.d0
       do ii_xi=xi_stepslower,xi_stepsupper,2
 
 c      if(ii_xi.ge.xi_stepslower+2)rmin=(rmin1/RadiusOne)*
@@ -685,6 +685,7 @@ C           This function redefines nsto=2*n_jstates*nsto
             write(*,*) 'LOWEST BOUND', eigval(lowest_bound)
 !         coefffornorm(lowest_bound)=1.d0
             coeff(lowest_bound)=1.d0
+            start_occupancy=start_occupancy+coeff(lowest_bound)
             do i=1,nstates
               if (eigval(i) .lt. -1.d0) then
                 coeff(i) = 1.d0
@@ -707,6 +708,7 @@ C           This function redefines nsto=2*n_jstates*nsto
 !         coefffornorm(lowest_bound_e)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_e)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_e)=1.d0/dsqrt(2.d0)
+            start_occupancy=start_occupancy+coeff(lowest_bound_e)**2
             e_lowestBoundOdd = maxval(eigval_o)
             lowest_bound_o = maxloc(eigval_o, 1) + nste
             do i=1,nsto
@@ -723,6 +725,7 @@ C           This function redefines nsto=2*n_jstates*nsto
 !       coefffornorm(lowest_bound_o)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_o)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_o)=1.d0/dsqrt(2.d0)
+            start_occupancy=start_occupancy+coeff(lowest_bound_o)**2
             do i=1,nste
               if (eigval_e(i) .lt. -1.d0) then
                 coeff(i) = 1.d0/dsqrt(2.d0)
@@ -1074,11 +1077,14 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
           enddo
           deallocate(eigval_o)
         endif
+        Prob_ionisation=Prob_ionisation/start_occupancy
         if (ii_xi .eq. xi_stepslower)then
           occupancy_neg_cont_init = Prob_electron_creation
         endif
         Prob_electron_creation=occupancy_neg_cont_init-
      &  Prob_electron_creation
+        Prob_electron_creation=Prob_electron_creation/
+     &  occupancy_neg_cont_init
 
         if (ii_xi.ne. 0)then
           write(127,*)(ii_xi/abs(ii_xi))*
