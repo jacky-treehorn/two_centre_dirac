@@ -55,7 +55,7 @@ c     must be constant there)
       logical Manual_Coeff_Input,dkb,Sudden_approx,
      &state_range_input,Plots_wanted,Recoil_on_off,
      &init_recoil,Manual_ncont_states,dipping_wave_allocated,!mkdirs,
-     &unfreeze_basis
+     &unfreeze_basis,b_projMatMultipoleAllocated
       inp_dir = 'input_output/'
       call factor()
 
@@ -241,6 +241,7 @@ c      i_xi_start=(xi_stepslower+1)*xi_range*1.d0/xi_stepsupper
       open(333,file='Mat_norms/D_Mat_Norm.dat')
       allocate(number_states_perm(2,-nkap:nkap))
       start_occupancy = 0.d0
+      b_projMatMultipoleAllocated = .false.
       do ii_xi=xi_stepslower,xi_stepsupper,2
 
 c      if(ii_xi.ge.xi_stepslower+2)rmin=(rmin1/RadiusOne)*
@@ -539,12 +540,12 @@ c         Does anything in here depend on xi? Only up_energy changes.
 C           This function redefines nstates=2*n_jstates*nstates
             call redefineEigvalWaveNew(n_jstates,eigval,eigval_mj,
      &      wave_new,wave_new_mj,nstates,nm,nkap)
-            deallocate(eigval_mj)
-            deallocate(wave_new_mj)
           else
             allocate(d_number_states_mj(nstates))
             d_number_states_mj = amu
           endif
+          deallocate(eigval_mj)
+          deallocate(wave_new_mj)
           allocate(mm(nstates,nstates))
           CALL MatrixMMGenerator_neqZ(dTdXi,dRdXi,eigval,nkap,vmat,
      &    wave_new,nstates,nm,nvmat,mm,dvdRmatdkb1,dvdRmatdkb2,
@@ -563,8 +564,6 @@ C           This function redefines nstates=2*n_jstates*nstates
 C           This function redefines nste=2*n_jstates*nste
             call redefineEigvalWaveNew(n_jstates,eigval_e,eigval_e_mj,
      &      wave_new_even,wave_new_even_mj,nste,nm,nkap)
-            deallocate(eigval_e_mj)
-            deallocate(wave_new_even_mj)
             deallocate(eigval_o)
             deallocate(wave_new_odd)
             allocate(eigval_o(2*n_jstates*nsto))
@@ -572,14 +571,16 @@ C           This function redefines nste=2*n_jstates*nste
 C           This function redefines nsto=2*n_jstates*nsto
             call redefineEigvalWaveNew(n_jstates,eigval_o,eigval_o_mj,
      &      wave_new_odd,wave_new_odd_mj,nsto,nm,nkap)
-            deallocate(eigval_o_mj)
-            deallocate(wave_new_odd_mj)
           else
             allocate(d_number_states_mj_even(nste))
             allocate(d_number_states_mj_odd(nsto))
             d_number_states_mj_even = amu
             d_number_states_mj_odd = amu
           endif
+          deallocate(eigval_e_mj)
+          deallocate(eigval_o_mj)
+          deallocate(wave_new_even_mj)
+          deallocate(wave_new_odd_mj)
           allocate(mmeven(nste,nste))
           CALL MatrixMMGenerator_eqZeven(dTdXi,dRdXi,eigval_e,nkap,
      &    vmat,wave_new_even,nste,nm,nvmat,mmeven,dvdRmatdkb1,
@@ -685,10 +686,12 @@ C           This function redefines nsto=2*n_jstates*nsto
             write(*,*) 'LOWEST BOUND', eigval(lowest_bound)
 !         coefffornorm(lowest_bound)=1.d0
             coeff(lowest_bound)=1.d0
-            start_occupancy=start_occupancy+coeff(lowest_bound)
+            start_occupancy=start_occupancy+cdabs(coeff(lowest_bound))
             do i=1,nstates
               if (eigval(i) .lt. -1.d0) then
                 coeff(i) = 1.d0
+                occupancy_neg_cont_init=occupancy_neg_cont_init+
+     &          cdabs(coeff(i))
               endif
             enddo
           else
@@ -708,7 +711,8 @@ C           This function redefines nsto=2*n_jstates*nsto
 !         coefffornorm(lowest_bound_e)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_e)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_e)=1.d0/dsqrt(2.d0)
-            start_occupancy=start_occupancy+coeff(lowest_bound_e)**2
+            start_occupancy=start_occupancy+
+     &      cdabs(coeff(lowest_bound_e))**2
             e_lowestBoundOdd = maxval(eigval_o)
             lowest_bound_o = maxloc(eigval_o, 1) + nste
             do i=1,nsto
@@ -725,15 +729,20 @@ C           This function redefines nsto=2*n_jstates*nsto
 !       coefffornorm(lowest_bound_o)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_o)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_o)=1.d0/dsqrt(2.d0)
-            start_occupancy=start_occupancy+coeff(lowest_bound_o)**2
+            start_occupancy=start_occupancy+
+     &      cdabs(coeff(lowest_bound_o)**2)
             do i=1,nste
               if (eigval_e(i) .lt. -1.d0) then
                 coeff(i) = 1.d0/dsqrt(2.d0)
+                occupancy_neg_cont_init=occupancy_neg_cont_init+
+     &          cdabs(coeff(i))**2
               endif
             enddo
             do i=1,nsto
               if (eigval_o(i) .lt. -1.d0) then
                 coeff(i+nste) = 1.d0/dsqrt(2.d0)
+                occupancy_neg_cont_init=occupancy_neg_cont_init+
+     &          cdabs(coeff(i+nste))**2
               endif
             enddo
           endif
@@ -821,6 +830,7 @@ c       Except when the ground state dips into the neg. continuum.
      &        unfreeze_basis) then
             deallocate(wave_new_at_dip)
             dipping_wave_allocated = .false.
+            unfreeze_basis = .false.
           endif
           if (ii_xi.gt.xi_stepslower)then
             deallocate(wave_new_prev)
@@ -845,6 +855,7 @@ c       Except when the ground state dips into the neg. continuum.
             deallocate(wave_new_at_dip_even)
             deallocate(wave_new_at_dip_odd)
             dipping_wave_allocated = .false.
+            unfreeze_basis = .false.
           endif
           if (ii_xi.gt.xi_stepslower)then
             deallocate(wave_new_even_prev)
@@ -862,6 +873,7 @@ c       Except when the ground state dips into the neg. continuum.
         endif
         if ((energy_lowest_bound .lt. -1.d0) .or. unfreeze_basis)then
           allocate(projMatMultipole(nstates,nstates))
+          b_projMatMultipoleAllocated = .true.
           if(z_nuc1.ne.z_nuc2)then
             call projection_matrix_frozen_basis(nstates,nm,
      &      nkap,alt_dmat,wave_new,wave_new_at_dip,projMatMultipole)
@@ -896,20 +908,35 @@ C       Project forward to the moving basis
             enddo
             coefffornorm(i)=summe
           enddo
-          deallocate(projMatMultipole)
           coeff=coefffornorm
-        endif
-        if (unfreeze_basis .and. .not.dipping_wave_allocated)then
-          unfreeze_basis = .false.
         endif
 CC******THE FINAL STEP!!!!!!!!!!!!!!!!
         coefffornorm=0.d0
+        total_occupancy=0.d0
         do i=1,nstates
           summe=0.d0
           do k=1,nstates
             summe=summe+dd(i,k)*coeff(k)
+            if (z_nuc1.ne.z_nuc2 .and. cdabs(summe).gt.1.d0)then
+              summe = summe/cdabs(summe)
+              exit
+            endif
+            if (z_nuc1.eq.z_nuc2 .and. cdabs(summe)**2.gt.0.5d0)then
+              summe = summe/cdabs(summe)/dsqrt(2.d0)
+              exit
+            endif
           enddo
           coefffornorm(i)=summe
+          if (z_nuc1.ne.z_nuc2)then
+            total_occupancy=total_occupancy+cdabs(summe)
+          else
+            total_occupancy=total_occupancy+cdabs(summe)**2
+          endif
+          if (total_occupancy.gt.start_occupancy+
+     &    occupancy_neg_cont_init)then
+            total_occupancy=start_occupancy+occupancy_neg_cont_init
+            exit
+          endif
         enddo
         coeff=coefffornorm
 C       Project back to the frozen basis
@@ -922,15 +949,18 @@ C       Project back to the frozen basis
             enddo
             coefffornorm(i)=summe
           enddo
-          deallocate(projMatMultipole)
           coeff=coefffornorm
+        endif
+        if (b_projMatMultipoleAllocated)then
+          deallocate(projMatMultipole)
+          b_projMatMultipoleAllocated = .false.
         endif
 c*******END OF THE FINAL STEP!!!!!!!!!!!
         if(z_nuc1.eq.z_nuc2)then
           write(*,*)cdabs(coeff(lowest_bound_e))**2,
      &    cdabs(coeff(lowest_bound_o))**2
         else
-          write(*,*)cdabs(coeff(lowest_bound))**2
+          write(*,*)cdabs(coeff(lowest_bound))
         endif
 
         iii_xi=ii_xi
@@ -1026,7 +1056,7 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
      &        dble(coeff(i)),aimag(coeff(i)),eigval(i)
               write(2256+i,'(3f19.11)') (iii_xi/abs(iii_xi))*2.d0*
      &        distance_startP/0.0025896063d0,
-     &        cdabs(coeff(i))**2,eigval(i)
+     &        cdabs(coeff(i)),eigval(i)
             endif
             close(50513+en_eval1)
             close(2256+en_eval1)
@@ -1046,11 +1076,11 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
         if(z_nuc1.ne.z_nuc2)then
           do i=1,nstates
             if(eigval(i).gt. 1.d0)then
-              Prob_ionisation=Prob_ionisation+cdabs(coeff(i))**2
+              Prob_ionisation=Prob_ionisation+cdabs(coeff(i))
             endif
             if(eigval(i).lt.-1.d0)then
               Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i))**2
+     &        cdabs(coeff(i))
             endif
           enddo
           deallocate(eigval)
