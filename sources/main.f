@@ -917,7 +917,7 @@ CC******THE FINAL STEP!!!!!!!!!!!!!!!!
           summe=0.d0
           do k=1,nstates
             summe=summe+dd(i,k)*coeff(k)
-            if (z_nuc1.ne.z_nuc2 .and. cdabs(summe).gt.1.d0)then
+            if (z_nuc1.ne.z_nuc2 .and. cdabs(summe)**2.gt.1.d0)then
               summe = summe/cdabs(summe)
               exit
             endif
@@ -927,11 +927,7 @@ CC******THE FINAL STEP!!!!!!!!!!!!!!!!
             endif
           enddo
           coefffornorm(i)=summe
-          if (z_nuc1.ne.z_nuc2)then
-            total_occupancy=total_occupancy+cdabs(summe)
-          else
-            total_occupancy=total_occupancy+cdabs(summe)**2
-          endif
+          total_occupancy=total_occupancy+cdabs(summe)**2
           if (total_occupancy.gt.start_occupancy+
      &    occupancy_neg_cont_init)then
             total_occupancy=start_occupancy+occupancy_neg_cont_init
@@ -960,7 +956,7 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
           write(*,*)cdabs(coeff(lowest_bound_e))**2,
      &    cdabs(coeff(lowest_bound_o))**2
         else
-          write(*,*)cdabs(coeff(lowest_bound))
+          write(*,*)cdabs(coeff(lowest_bound))**2
         endif
 
         iii_xi=ii_xi
@@ -1056,7 +1052,7 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
      &        dble(coeff(i)),aimag(coeff(i)),eigval(i)
               write(2256+i,'(3f19.11)') (iii_xi/abs(iii_xi))*2.d0*
      &        distance_startP/0.0025896063d0,
-     &        cdabs(coeff(i)),eigval(i)
+     &        cdabs(coeff(i))**2,eigval(i)
             endif
             close(50513+en_eval1)
             close(2256+en_eval1)
@@ -1076,11 +1072,11 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
         if(z_nuc1.ne.z_nuc2)then
           do i=1,nstates
             if(eigval(i).gt. 1.d0)then
-              Prob_ionisation=Prob_ionisation+cdabs(coeff(i))
+              Prob_ionisation=Prob_ionisation+cdabs(coeff(i))**2
             endif
             if(eigval(i).lt.-1.d0)then
               Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i))
+     &        cdabs(coeff(i))**2
             endif
           enddo
           deallocate(eigval)
