@@ -2,7 +2,7 @@
       include 'inc.par'
       real*8, dimension(:),allocatable:: u
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
 
@@ -62,7 +62,6 @@ CCC     &           2.d0*(-az1-az2*(-1)**l)/rg*(rel)**l/(2*l+1)/u(l)
           write(*,*) vtst,'expansion'
           write(*,*) dabs((v1+v2-vtst)/vtst),'abs. accuracy'
         enddo
-        pause
       enddo
       goto 1
       deallocate(u)
@@ -84,7 +83,7 @@ CCC     &           2.d0*(-az1-az2*(-1)**l)/rg*(rel)**l/(2*l+1)/u(l)
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /rad/ radius
       common /order/ ll
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
@@ -157,7 +156,7 @@ c      if(l.eq.0) pause
       common /r_nuc/ r01,r02
       common /aferm/summa1,summa2
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       external r_ferma,r_ferm1a,r_fermb,r_ferm1b
       common /nuc_mod/ nuc_model
 
@@ -281,9 +280,6 @@ c      if(l.eq.0) pause
               t1=t1*1.9d0
             enddo
             v2=-az2*v2/y2/summa2
-          case(4)
-            pause 'This potential is not realized yet'
-            stop
         end select
         v2=v2-v0
       endif
@@ -502,13 +498,14 @@ c$$$      enddo
       implicit real*8(a-h,o-z)
       common /ftal/ftl(300),srftl(300)
 c
- 10   ka1 = cja+cjb+cje
-      ka2 = cja+cjc+cjf
-      ka3 = cjb+cjd+cjf
-      ka4 = cjc+cjd+cje
-      kb1 = cja+cjb+cjc+cjd
-      kb2 = cja+cjd+cje+cjf
-      kb3 = cjb+cjc+cje+cjf
+c 10   ka1 = cja+cjb+cje
+      ka1 = nint(cja+cjb+cje)
+      ka2 = nint(cja+cjc+cjf)
+      ka3 = nint(cjb+cjd+cjf)
+      ka4 = nint(cjc+cjd+cje)
+      kb1 = nint(cja+cjb+cjc+cjd)
+      kb2 = nint(cja+cjd+cje+cjf)
+      kb3 = nint(cjb+cjc+cje+cjf)
       mx = max0(ka1,ka2,ka3,ka4)
       mn = min0(kb1,kb2,kb3)
       if(mx.gt.mn) go to 3
@@ -740,7 +737,7 @@ c########
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
       common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
@@ -997,7 +994,7 @@ ccc***************BARYONIC CENTRE POTENTIAL**********************************
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
       common /Barycentres/ RadiusOne,RadiusTwo
@@ -1150,7 +1147,7 @@ c      enddo
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
       common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
@@ -1278,7 +1275,7 @@ c      enddo
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance
+      common /dist/distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
       common /Barycentres/ RadiusOne,RadiusTwo
@@ -1439,6 +1436,7 @@ c      enddo
      &t32(32),w64(64),t64(64),t6(6),w6(6)
       common /nuc_mod/ nuc_model
       common /common_dkb/ dkb
+      common /dist/distance,Starting_Distance
       logical dkb
 
       RadiusOne= 2.d0*dist*Proj_mass/(Proj_mass+Targ_mass)
