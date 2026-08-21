@@ -855,8 +855,8 @@ c end
      &Highest_bound_o,Highest_bound_e, xi_stepslower,xi_stepsupper,
      &Lowest_bound_e,Start_state_e,End_state_e,Mat_Dimension,iixi,
      &Lowest_bound_o,Start_state_o,End_state_o
-      common /nuc_charge/ z_nuc1,z_nuc2
-      common /momentum_projection/ amu
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
+      common /momentum_projection/ amu,amj_max
 
       if(state_range_input)then
         open(1,file='inp.inp',status='old')
@@ -1044,8 +1044,8 @@ c    pause
      &Highest_bound,xi_stepslower,xi_stepsupper,
      &Manual_ncont_states,Manual_pcont_states,Manual_bound_states,
      &Lowest_bound,Start_state,End_state,Mat_Dimension,iixi
-      common /nuc_charge/ z_nuc1,z_nuc2
-      common /momentum_projection/ amu
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
+      common /momentum_projection/ amu,amj_max
       common /common_dkb/ dkb
       logical dkb
 
@@ -1351,7 +1351,7 @@ c end
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
 c      logical state_range_input
 c      common /staterangeinput/ state_range_input
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
 
       MatEl_Ang_comp_lge=0.d0
@@ -1513,7 +1513,7 @@ c     &            MatEl_Ang_comp_sml(kk2,L,kk)
      &state_in_cont(Start_state:Start_state+Mat_dimension-1)
 c      logical state_range_input
 c      common /staterangeinput/ state_range_input
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
 
       MatEl_Ang_comp_lge=0.d0
@@ -1894,7 +1894,7 @@ c          endif
       real*8 wave_new(nstates,2*nm,-nkap:nkap),
      &wavesum_lge1(nm,0:2*nkap),wavesum_sml1(nm,0:2*nkap),
      &unroll(0:2*nkap,2)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
 
       unroll=0.d0
@@ -1941,7 +1941,7 @@ c          endif
      &-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &MatEl_Ang_comp_sml(-nkap:nkap,0:2*nkap,-nkap:nkap),
      &MatEl_Ang_comp_lge(-nkap:nkap,0:2*nkap,-nkap:nkap)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
       MatEl_Ang_comp_lge=0.d0
       MatEl_Ang_comp_sml=0.d0
@@ -2047,7 +2047,7 @@ c      endif
      &-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &MatEl_Ang_comp_sml(-nkap:nkap,0:2*nkap,-nkap:nkap),
      &MatEl_Ang_comp_lge(-nkap:nkap,0:2*nkap,-nkap:nkap)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
 
       MatEl_Ang_comp_lge=0.d0
@@ -2168,7 +2168,7 @@ c      endif
      &-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &MatEl_Ang_comp_sml(-nkap:nkap,0:2*nkap,-nkap:nkap),
      &MatEl_Ang_comp_lge(-nkap:nkap,0:2*nkap,-nkap:nkap)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
 
       MatEl_Ang_comp_lge=0.d0
@@ -2462,7 +2462,7 @@ c      endif
      &-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &MatEl_Ang_comp_sml(-nkap:nkap,0:2*nkap,-nkap:nkap),
      &MatEl_Ang_comp_lge(-nkap:nkap,0:2*nkap,-nkap:nkap)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
 
       MatEl_Ang_comp_lge=0.d0
@@ -2593,7 +2593,7 @@ c      endif
      &-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &MatEl_Ang_comp_sml(-nkap:nkap,0:2*nkap,-nkap:nkap),
      &MatEl_Ang_comp_lge(-nkap:nkap,0:2*nkap,-nkap:nkap)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
 
       MatEl_Ang_comp_lge=0.d0
@@ -2725,7 +2725,7 @@ C     ******************************************************************
       complex*16 mm(Start_state:Start_state+Mat_dimension-1,
      &Start_state:Start_state+Mat_dimension-1)
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 c      common /staterangeinput/ state_range_input
       logical dkb!,state_range_input
 
@@ -3252,7 +3252,7 @@ C     ******************************************************************
       complex*16 mmeven(Start_state:Start_state+2*Mat_dimension-1,
      &Start_state:Start_state+2*Mat_dimension-1)
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 c      common /staterangeinput/ state_range_input
       logical dkb!,state_range_input
 
@@ -3387,7 +3387,7 @@ C     ******************************************************************
       complex*16 mmodd(Start_state:Start_state+2*Mat_dimension-1,
      &Start_state:Start_state+2*Mat_dimension-1)
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 c      common /staterangeinput/ state_range_input
       logical dkb!,state_range_input
 
@@ -3521,7 +3521,7 @@ ccc endif
       integer, dimension (:,:), allocatable:: contributor_substates
       logical dkb,check!,mkdirs
       common /common_dkb/ dkb
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       !mkdirs=makedirqq('PRJ')
       CALL SYSTEM("mkdir -p PRJ")
@@ -3775,7 +3775,7 @@ c      enddo
      &primary_element,primary_element_prev
       logical dkb,check!,mkdirs
       common /common_dkb/ dkb
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       !mkdirs=makedirqq('PRJ')
       CALL SYSTEM("mkdir -p PRJ")
@@ -4017,7 +4017,7 @@ c      enddo
       integer, dimension(:,:), allocatable:: contributor_substates
       logical dkb,check
       common /common_dkb/ dkb
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       CALL SYSTEM("mkdir -p PRJ")
 
@@ -5676,27 +5676,23 @@ c e=e/dsqrt(2.d0)
           endif
         endif
       enddo
-      do i=1,a_dim
-        if(i.ge. max(2,a_dim) .and. i.le. max(1,a_dim-1))then
-          if(e(i-1).ne.-e(i) .and. e(i).ne.-e(i+1))then
-            do k=1,a_dim
-              eigvec(k,i)=z(k,i)*(1,0)
-            enddo
-          endif
-        elseif(i.eq.1)then
-          if(e(i).ne.-e(i+1))then
-            do k=1,a_dim
-              eigvec(k,i)=z(k,i)*(1,0)
-            enddo
-          endif
-        elseif(i.eq.a_dim)then
-          if(e(i).ne.-e(i-1))then
-            do k=1,a_dim
-              eigvec(k,i)=z(k,i)*(1,0)
-            enddo
-          endif
-        endif
+      if(e(1).ne.-e(2))then
+        do k=1,a_dim
+          eigvec(k,1)=z(k,1)*(1,0)
+        enddo
+      endif
+      do i=2,a_dim-1
+        if(e(i-1).ne.-e(i) .and. e(i).ne.-e(i+1))then
+          do k=1,a_dim
+            eigvec(k,i)=z(k,i)*(1,0)
+          enddo
+       endif
       enddo
+      if(e(a_dim).ne.-e(a_dim-1))then
+        do k=1,a_dim
+          eigvec(k,a_dim)=z(k,a_dim)*(1,0)
+        enddo
+      endif
 
       do i=1,a_dim
         z_norm=z_norm+cdabs(eigvec(1,i)*conjg(eigvec(1,i)))
@@ -5762,7 +5758,7 @@ c e=e/dsqrt(2.d0)
       integer One_s_state_location
       real*8, dimension(:),allocatable :: el,tempeigval_e
       real*8, dimension(:,:,:),allocatable:: wave_new_even_shift
-      common /nuc_charge/ az1,az2
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       logical dkb
 
       allocate(el(nste))
@@ -5845,8 +5841,8 @@ c         write(*,*)j,el(j)
       subroutine spline_arranger_old(nu,rmin,rmax,t)
       include 'inc.par'
       common /Barycentres/ RadiusOne,RadiusTwo
-      common /dist/distance
-      common /nuc_charge/ z_nuc1,z_nuc2
+      common /dist/distance,Starting_Distance
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 t(nu)
 
       hh=dexp((dlog(rmax)-dlog(rmin))/dble(nu-2*ns))
@@ -5937,7 +5933,7 @@ c         write(*,*)j,el(j)
       real*8, dimension(:), allocatable:: Line_value
       logical dkb!,mkdirs
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
       !mkdirs=makedirqq('WF')
       CALL SYSTEM("mkdir -p WF")
@@ -6115,8 +6111,8 @@ C     FULL WAVEFUNCTION SAMPLING
       character typ
       logical dkb,swapover
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
-      common /nuc_charge/ z_nuc1,z_nuc2
+      common /momentum_projection/ amu,amj_max
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
       CALL SYSTEM("mkdir -p WF")
@@ -6346,8 +6342,8 @@ c     &      (Sample_point**2+1.d0)
       character typ
       logical dkb,swapover!,mkdirs
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
-      common /nuc_charge/ az1,az2
+      common /momentum_projection/ amu,amj_max
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
       CALL SYSTEM("mkdir -p WF")
@@ -6523,8 +6519,8 @@ c     SINGLE POINT SAMPLING
       real*8,dimension(:),allocatable::t
       logical dkb
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
-      common /Barycentres/ RadiusOne
+      common /momentum_projection/ amu,amj_max
+      common /Barycentres/ RadiusOne,RadiusTwo
 
       do i_nst=1,nstates
         do kk=-nkap,nkap
@@ -7233,7 +7229,7 @@ c       endif
       real*8, dimension(:,:,:), allocatable:: ang_sigx_temp_p,
      &ang_sigx_temp_m
       common /common_dkb/ dkb
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
       logical dkb
 
       mj_max=nint(amj_max+0.5d0)
@@ -7449,7 +7445,7 @@ c      write(*,*)stat_in_cont
       real*8, dimension(:,:,:), allocatable:: ang_sigx_temp_p,
      &ang_sigx_temp_m
       common /common_dkb/ dkb
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
       logical dkb
 
       mj_max=nint(amj_max+0.5d0)
@@ -7676,7 +7672,7 @@ c      write(*,*)stat_in_cont
       real*8, dimension(:,:,:), allocatable:: ang_sigx_temp_p,
      &ang_sigx_temp_m
       common /common_dkb/ dkb
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
       logical dkb
 
       mj_max=nint(amj_max+0.5d0)
@@ -7905,7 +7901,7 @@ c      write(*,*)stat_in_cont
       real*8, dimension(:,:,:), allocatable:: ang_sigx_temp_p,
      &ang_sigx_temp_m
       common /common_dkb/ dkb
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
       logical dkb
 
       mj_max=nint(amj_max+0.5d0)
@@ -8568,7 +8564,7 @@ c      write(*,*)i_col,j_row!,Mat_Dimension*2*nkap*lstep
      &nmj)
       include 'inc.par'
       complex*16 mm(nste,nste,nmj),mm_mj(nstates,nstates)
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -8599,7 +8595,7 @@ c      write(*,*)i_col,j_row!,Mat_Dimension*2*nkap*lstep
       include 'inc.par'
       integer numb_mj(4,nkap)
       real*8 mm(nste,nste,nmj),mm_mj(nstates,nstates)
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -8637,7 +8633,7 @@ c      write(*,*)i_col,j_row!,Mat_Dimension*2*nkap*lstep
      &mm_mj,nmj)
       include 'inc.par'
       complex*16 mm(nste,nste,nmj),mm_mj(nstates,nstates)
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -8668,7 +8664,7 @@ c      write(*,*)i_col,j_row!,Mat_Dimension*2*nkap*lstep
       include 'inc.par'
       integer numb_mj(2,nkap)
       real*8 mm(nste,nste,nmj),mm_mj(nstates,nstates)
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -8837,9 +8833,9 @@ c      endif
       character*1 typ
       logical dkb!,mkdirs
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
-      common /nuc_charge/ z_nuc1,z_nuc2
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
       CALL SYSTEM("mkdir -p WF")
@@ -9267,9 +9263,9 @@ c         df_sum(i)=dabs(df_sum(i))
       character*1 typ
       logical dkb,en_min(4),skipq(nstates)!,mkdirs
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
-      common /nuc_charge/ z_nuc1,z_nuc2
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
       CALL SYSTEM("mkdir -p WF")
@@ -9668,9 +9664,9 @@ c     &      wfgtotal**2+wfftotal**2+wfgtotal1**2+wfftotal1**2
       character*1 typ
       logical dkb!,mkdirs
       common /common_dkb/ dkb
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
-      common /nuc_charge/ z_nuc1,z_nuc2
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       !mkdirs=makedirqq('WF')
       CALL SYSTEM("mkdir -p WF")
@@ -9978,7 +9974,7 @@ c              df_sum_old(iii)=df_storage
      &numb_mj)
       include 'inc.par'
       integer number_states(2,-nkap:nkap),numb_mj(4,nkap)
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -10030,7 +10026,7 @@ c              df_sum_old(iii)=df_storage
       include 'inc.par'
       integer number_states(2,-nkap:nkap),numbe_mj(2,nkap),
      &numbo_mj(2,nkap)
-      common /momentum_projection/ amj_max
+      common /momentum_projection/ amu,amj_max
 
       mj_max=nint(amj_max+0.5d0)
 
@@ -10124,8 +10120,8 @@ c              df_sum_old(iii)=df_storage
       subroutine getIntegralWeights(ttt, www)
       include 'inc.par'
       real*8 ttt(nuz), www(nuz)
-      common /weights/ w4n(4),t4n(4),w8(8),t8(8),w16(16),t16(16),
-     &w32(32),t32(32),w64(64),t64(64),t6(6),w6(6)
+      common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
+     &t32(32),w64(64),t64(64),t6(6),w6(6)
 
       select case (nuz)
         case(4)
@@ -10166,7 +10162,7 @@ c              df_sum_old(iii)=df_storage
       subroutine draw_sigma(nm,nkap,nu,tknot,wave)
       include 'inc.par'
       real*8 ro(ns),ro1(ns),wave(2*nm,-nkap:nkap),tknot(nu)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
       real*8, dimension(:,:,:),allocatable:: plot
 
       allocate(plot(5,16*(nu-2*ns+1),0:nugl))
@@ -10289,7 +10285,7 @@ c              df_sum_old(iii)=df_storage
       subroutine draw_sigma_raw(nm,nkap,nu,tknot,wave)
       include 'inc.par'
       real*8 ro(ns),ro1(ns),wave(2*nm,-nkap:nkap),tknot(nu)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
       real*8, dimension(:,:,:),allocatable:: plot
 
       allocate(plot(5,16*(nu-2*ns+1),0:nugl))
@@ -10415,7 +10411,7 @@ c 1    format(e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6)
       subroutine draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
       include 'inc.par'
       real*8 ro(ns),ro1(ns),wave(2*nm,2*nm,-nkap:nkap),tknot(nu)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
 
       if(kk.gt.0)then
         l1=kk
@@ -10836,7 +10832,7 @@ c      write(*,*) M,'found vectors'
       real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
      &eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm),dist_as_integer
-      common /dist/distance
+      common /dist/ distance,Starting_Distance
       real*8, dimension(:,:),allocatable:: wcf
       character*5 dist_string
       allocate (wcf(2*nm,-nkap:nkap))
@@ -11082,9 +11078,9 @@ c      write(*,*) M,'found vectors'
       real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
      &eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/ distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
 
@@ -11120,7 +11116,7 @@ c      write(*,*) M,'found vectors'
       real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
      &eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm),dist_as_integer
-      common /dist/distance
+      common /dist/ distance,Starting_Distance
       real*8, dimension(:,:),allocatable:: wcf
       character*5 dist
       allocate (wcf(2*nm,-nkap:nkap))
@@ -11367,9 +11363,9 @@ c      write(*,*) M,'found vectors'
       real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
      &eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm)
-      common /momentum_projection/ amu
+      common /momentum_projection/ amu,amj_max
       common /r_nuc/ r01,r02
-      common /dist/distance
+      common /dist/ distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /nuc_mod/ nuc_model
 
@@ -11405,7 +11401,7 @@ c      write(*,*) M,'found vectors'
       real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
      &eigval(nstates),eigvec(nstates,nstates)
       integer num_st(-nkap:nkap,2*nm),dist_as_integer
-      common /dist/distance
+      common /dist/ distance,Starting_Distance
       real*8, dimension(:,:),allocatable:: wcf
       character*5 dist
       allocate (wcf(2*nm,-nkap:nkap))

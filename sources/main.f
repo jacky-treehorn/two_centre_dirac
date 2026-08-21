@@ -10,7 +10,7 @@ c     must be constant there)
       common /r_nuc/ r01,r02
       common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
      &b_ImpactParam
-      common /dist/distance,Starting_Distance
+      common /dist/ distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /ferm/ cf1,af1,cf2,af2
       common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
