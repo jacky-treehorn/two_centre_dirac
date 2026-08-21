@@ -2,8 +2,8 @@
       include 'inc.par'
       real*8, dimension(:),allocatable:: u
       common /r_nuc/ r01,r02
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
+      common /dist/distance
+      common /nuc_charge/ z_nuc1,z_nuc2
       common /nuc_mod/ nuc_model
 
       allocate(u(0:2*nkap))
@@ -153,10 +153,10 @@ c      if(l.eq.0) pause
 
       subroutine v_nucl(n,y,x,v1,v2,v0)
       include 'inc.par'
-      common /r_nuc/ r01,r02
-      common /aferm/summa1,summa2
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /dist/distance,Starting_Distance
+      common /r_nuc/ r01
+      common /aferm/summa1
+      common /nuc_charge/ z_nuc1,az1
+      common /dist/distance
       external r_ferma,r_ferm1a,r_fermb,r_ferm1b
       common /nuc_mod/ nuc_model
 
@@ -342,7 +342,7 @@ c      if(l.eq.0) pause
       subroutine store_angle(nkap,ang)
       include 'inc.par'
       real*8 ang(-nkap:nkap,-nkap:nkap,0:2*nkap)
-      common /momentum_projection/ amu,amj_max
+      common /momentum_projection/ amu
 
       ang=0.d0
 
@@ -737,11 +737,11 @@ c########
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance,Starting_Distance
+      common /dist/distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
-      common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
-     &t32(32),w64(64),t64(64),t6(6),w6(6)
+      common /weights/ w32(32),
+     &t32(32)
       common /nuc_mod/ nuc_model
 
       u=0.d0
@@ -867,8 +867,8 @@ c########
       external potl1,potl2
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
-      common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
-     &t32(32),w64(64),t64(64),t6(6),w6(6)
+      common /weights/ w32(32),
+     &t32(32)
       common /nuc_mod/ nuc_model
 
       u=0.d0
@@ -994,12 +994,12 @@ ccc***************BARYONIC CENTRE POTENTIAL**********************************
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance,Starting_Distance
+      common /dist/distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
       common /Barycentres/ RadiusOne,RadiusTwo
-      common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
-     &t32(32),w64(64),t64(64),t6(6),w6(6)
+      common /weights/ w32(32),
+     &t32(32)
       common /nuc_mod/ nuc_model
 
 ccc RadiusOne= 2.d0*distance*z_nuc2/(z_nuc1+z_nuc2)
@@ -1147,11 +1147,11 @@ c      enddo
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance,Starting_Distance
+      common /dist/distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
-      common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
-     &t32(32),w64(64),t64(64),t6(6),w6(6)
+      common /weights/ w32(32),
+     &t32(32)
       common /nuc_mod/ nuc_model
 
       u=0.d0
@@ -1275,12 +1275,12 @@ c      enddo
       include 'inc.par'
       common /r_nuc/ r01,r02
       external potl1,potl2
-      common /dist/distance,Starting_Distance
+      common /dist/distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 u(0:2*nkap)
       common /Barycentres/ RadiusOne,RadiusTwo
-      common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
-     &t32(32),w64(64),t64(64),t6(6),w6(6)
+      common /weights/ w32(32),
+     &t32(32)
       common /nuc_mod/ nuc_model
 
 ccc RadiusOne= 2.d0*distance*z_nuc2/(z_nuc1+z_nuc2)
@@ -1429,14 +1429,14 @@ c      enddo
       common /r_nuc/ r01,r02
       external potl1,potl2
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
+      common /TargProj_prop/ Proj_mass,Targ_mass,
      & b_ImpactParam
       real*8 u(0:2*nkap),dist
-      common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
-     &t32(32),w64(64),t64(64),t6(6),w6(6)
+      common /weights/ w32(32),
+     &t32(32)
       common /nuc_mod/ nuc_model
       common /common_dkb/ dkb
-      common /dist/distance,Starting_Distance
+      common /dist/distance
       logical dkb
 
       RadiusOne= 2.d0*dist*Proj_mass/(Proj_mass+Targ_mass)

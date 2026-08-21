@@ -23,9 +23,7 @@
      &v2sbj2a(-nkap:nkap,nm,nm,0:2*nkap),
      &v2sbj3a(-nkap:nkap,nm,nm,0:2*nkap),
      &v2sbj4a(-nkap:nkap,-nkap:nkap,nm,nm,0:2*nkap)
-      common /weights/ w4n(4),t4n(4),w8(8),t8(8),w16(16),t16(16),
-     &w32(32),t32(32),w64(64),t64(64),t6(6),w6(6)
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
+      common /nuc_charge/ z_nuc1,z_nuc2
       real*8 ttt(nuz),www(nuz),dv_dR(0:2*nkap),el(2*nm)
       common /dist/distance,Starting_Distance
       integer number_states(2,-nkap:nkap)
@@ -33,9 +31,8 @@
       logical dkb,Manual_ncont_states
       common /neg_cont/ Manual_ncont_states
       common /common_dkb/ dkb
-      common /Barycentres/ RadiusOne,RadiusTwo
-      common /step_progress/ xi_stepslower,xi_stepsupper,ii_xi
-      common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
+      common /step_progress/ xi_stepslower,xi_stepsupper
+      common /TargProj_prop/ Proj_mass,Targ_mass,
      &b_ImpactParam
 
       pi4=1.d0/(2.d0)
@@ -677,13 +674,7 @@ c I am guessing that wave is vector v in eq 16 of Johnson
       integer xi_stepslower
       logical dkb
       real*8, dimension(:), allocatable:: Line_value
-      common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
-     &b_ImpactParam
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /Barycentres/ RadiusOne,RadiusTwo
-      common /dist/ distance,Starting_Distance
       common /common_dkb/ dkb
-      common /momentum_projection/ amu,amj_max
 
 c      Starting_R1=2.d0*Starting_Distance*Proj_mass/(Proj_mass+Targ_mass)
 c      Starting_R2=2.d0*Starting_Distance*Targ_mass/(Proj_mass+Targ_mass)
@@ -979,8 +970,7 @@ ccc******************** dV/dR Matrix elements for the baryonic expansion
       subroutine ddsplines_for_dVdRMatElems_Baryonic(
      &x,ro,ro1,ro2,in,t1,nul,R,nkap,dv_dR)
       include 'inc.par'
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /dist/distance,Starting_Distance
+      common /nuc_charge/ az1,az2
       common /Barycentres/ RadiusOne,RadiusTwo
       integer nkap
       real*8 u(0:2*nkap),ro(ns),t1(nul),ro1(ns),ro2(ns),
@@ -1018,8 +1008,7 @@ c     &     (-1)**L*az2*dble(-L-1)*x**L/RadiusTwo**(L+1)/R
       subroutine dsplines_for_dVdRMatElems_Baryonic(
      &x,ro,ro1,in,t1,nul,R,nkap,dv_dR)
       include 'inc.par'
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /dist/distance,Starting_Distance
+      common /nuc_charge/ az1,az2
       common /Barycentres/ RadiusOne,RadiusTwo
       integer nkap
       real*8 u(0:2*nkap),ro(ns),t1(nul),ro1(ns),!ro12(ns,0:2*nkap),
@@ -2094,13 +2083,10 @@ c               endif
      &ttt(nuz),www(nuz),el(2*nm)
       integer number_states(2,-nkap:nkap),One_s_state_location
       logical dkb,Manual_ncont_states
-      common /weights/ w4n(4),t4n(4),w8(8),t8(8),w16(16),t16(16),
-     &w32(32),t32(32),w64(64),t64(64),t6(6),w6(6)
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
+      common /nuc_charge/ z_nuc1,z_nuc2
       common /neg_cont/ Manual_ncont_states
       common /common_dkb/ dkb
-      common /Barycentres/ RadiusOne,RadiusTwo
-      common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
+      common /TargProj_prop/ Targ_mass,
      &b_ImpactParam
 
       pi4=1.d0/(2.d0)
@@ -2465,9 +2451,7 @@ c               endif
      &dmat1(2*nm,2*nm),dvdRmat_dkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
      &dvdRmat_dkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
      &alternate_dmat(2*nm,2*nm,-nkap:nkap)
-      common /weights/ w4n(4),t4n(4),w8(8),t8(8),w16(16),t16(16),
-     &w32(32),t32(32),w64(64),t64(64),t6(6),w6(6)
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
+      common /nuc_charge/ z_nuc1,z_nuc2
       real*8 ttt(nuz),www(nuz),dv_dR(0:2*nkap),el(2*nm)
       common /dist/ distance,Starting_Distance
       integer number_states(2,-nkap:nkap)
@@ -2475,9 +2459,8 @@ c               endif
       logical dkb,Manual_ncont_states
       common /neg_cont/ Manual_ncont_states
       common /common_dkb/ dkb
-      common /Barycentres/ RadiusOne,RadiusTwo
-      common /step_progress/ xi_stepslower,xi_stepsupper,ii_xi
-      common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
+      common /step_progress/ xi_stepslower,xi_stepsupper
+      common /TargProj_prop/ Proj_mass,Targ_mass,
      &b_ImpactParam
 
       pi4=1.d0/(2.d0)
