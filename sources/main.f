@@ -1057,7 +1057,6 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
             deallocate(status_q)
           enddo
         endif
-        stop
         if(ii_xi.eq.xi_stepslower)then
           open(127,file='Coeffs/Ionisation_Probability_charges_'
      &    //Charge_ofnuc_1//'_'//Charge_ofnuc_2//

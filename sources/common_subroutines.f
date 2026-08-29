@@ -6521,6 +6521,7 @@ c     SINGLE POINT SAMPLING
       common /common_dkb/ dkb
       common /momentum_projection/ amu,amj_max
       common /Barycentres/ RadiusOne,RadiusTwo
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
 
       do i_nst=1,nstates
         do kk=-nkap,nkap
@@ -6660,8 +6661,8 @@ c       endif
       do i=1,nstates
         do j=i,nstates
           do ki=-nkap,nkap
+            stor_norm=0.d0
             if(ki.ne.0)then
-              stor_norm=0.d0
               if(dkb)then
                 do ii=1,nm
                   do jj=max(1,i-ns+1),min(i+ns-1,nm)
@@ -10564,6 +10565,7 @@ cc      write(*,*) 'EXITING R_DIAG'
       implicit real*8(a-h,o-z)
       real*8 a(nm,nm),eigvect(nm,nm)
       real*8 VL,VU,ABSTOL,eignum(nm)
+      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       integer, dimension(:),allocatable:: ISUPPZ,IWORK
       character*1 JOBZ,RANGE,UPLO
       real*8, dimension(:),allocatable:: WORK
@@ -11618,6 +11620,7 @@ c Added in order to get the states better defined 110810.
 
       function State_orgnzr(i,kk,max_kappa)
       integer State_orgnzr,i,kk,max_kappa
+      State_orgnzr=0
       if (kk .ne. 0) then
         State_orgnzr=Invtd_Kppa_arry(kk)+
      &  Invtd_Kppa_arry(max_kappa)*(i-1)
@@ -11627,6 +11630,7 @@ c Added in order to get the states better defined 110810.
 
       function Invtd_Kppa_arry(kk)
       integer Invtd_Kppa_arry,kk
+      Invtd_Kppa_arry=0
       if (kk .ne. 0) then
         if (kk .gt. 0) then
           Invtd_Kppa_arry=2*kk

@@ -154,7 +154,6 @@ c      if(l.eq.0) pause
       subroutine v_nucl(n,y,x,v1,v2,v0)
       include 'inc.par'
       common /r_nuc/ r01,r02
-      common /aferm/summa1
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /dist/distance,Starting_Distance
       external r_ferma,r_ferm1a,r_fermb,r_ferm1b
@@ -164,19 +163,6 @@ c      if(l.eq.0) pause
       v1=0.d0
       v2=0.d0
       if((n.eq.1).and.(z_nuc1.ne.0.d0))then
-        if((summa1.eq.0.d0).and.((Nuc_model.eq.3)
-     &  .or.(Nuc_model.eq.4))) then
-          t1a=0.d0
-          t2a=r01
-          re=rint(r_ferm1a,t1a,t2a,32)
-          summa1=re
-          do while(dabs(re/summa1).gt.1.d-16)
-            t1a=t2a
-            t2a=t2a*1.5d0
-            re=rint(r_ferm1a,t1a,t2a,32)
-            summa1=summa1+re
-          enddo
-        endif
         y1=dsqrt(y**2+distance**2-2.d0*y*distance*x)
         v0=-az1/y1
         select case(Nuc_model)
@@ -219,25 +205,21 @@ c      if(l.eq.0) pause
               t0=t1
               t1=t1*1.9d0
             enddo
+            t1a=0.d0
+            t2a=r01
+            re=rint(r_ferm1a,t1a,t2a,32)
+            summa1=re
+            do while(dabs(re/summa1).gt.1.d-16)
+              t1a=t2a
+              t2a=t2a*1.5d0
+              re=rint(r_ferm1a,t1a,t2a,32)
+              summa1=summa1+re
+            enddo
             v1=-az1*v1/y1/summa1
         end select
         v1=v1-v0
       elseif(z_nuc2.ne.0.d0)then
-        if((summa2.eq.0.d0).and.((Nuc_model.eq.3)
-     &  .or.(Nuc_model.eq.4))) then
-          t1a=0.d0
-          t2a=r01
-          re=rint(r_ferm1b,t1a,t2a,32)
-          summa2=re
-          do while(dabs(re/summa2).gt.1.d-16)
-            t1a=t2a
-            t2a=t2a*1.5d0
-            re=rint(r_ferm1b,t1a,t2a,32)
-            summa2=summa2+re
-          enddo
-        endif
         y2=dsqrt(y**2+distance**2+2.d0*y*distance*x)
-
         v0=-az2/y2
         select case(Nuc_model)
           case(0)
@@ -278,6 +260,16 @@ c      if(l.eq.0) pause
               v2=v2+su*y2
               t0=t1
               t1=t1*1.9d0
+            enddo
+            t1a=0.d0
+            t2a=r01
+            re=rint(r_ferm1b,t1a,t2a,32)
+            summa2=re
+            do while(dabs(re/summa2).gt.1.d-16)
+              t1a=t2a
+              t2a=t2a*1.5d0
+              re=rint(r_ferm1b,t1a,t2a,32)
+              summa2=summa2+re
             enddo
             v2=-az2*v2/y2/summa2
         end select
