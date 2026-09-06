@@ -41,6 +41,7 @@ c     must be constant there)
      &aaeigvecr,mm,mmeven,mmodd,bb_mjj,bb_mjj_even,bb_mjj_odd
       complex*16, dimension(:), allocatable :: ddmatnorm,coeff,
      &coefffornorm!,coefffornorm_prev
+c     coeff will need to be 2 dim if I ever use e-e interactions.
       real*8 i_xi,i_xi_next,i_xi_prev, energy_lowest_bound
       integer en_eval1,en_eval1j,xi_stepslower,xi_stepsupper,
      &c_ivalues(8)
@@ -319,7 +320,7 @@ c     &Proj_vel,0.11394267720000001d0,0.d0,dThetadXi)
         !0.5d0*derfc(R_std_dev*
 c     &(dabs(2.d0*distance)-(dabs(2.d0*Starting_distance)-
 c     &min(1.d0/R_std_dev,Starting_distance))))
-         write(*,*)'TRANSLATION FACTOR',Translation_factor
+        write(*,*)'TRANSLATION FACTOR',Translation_factor
 
         RadiusOne=2.d0*distance*Proj_mass/(Proj_mass+Targ_mass)
         RadiusTwo=2.d0*distance*Targ_mass/(Proj_mass+Targ_mass)
@@ -668,44 +669,58 @@ C           This function redefines nsto=2*n_jstates*nsto
           write(How_fast,195)int(Proj_vel*1000.d0)
   195     format(I4.4)
           n_vacuum_states = 0
+          n_waitUntilMj = 0
           if(z_nuc1.ne.z_nuc2)then
+            if (b_ImpactParam .gt. 0.d0)then
+              n_waitUntilMj = n_jstates/n_jstates
+            endif
             e_lowestBound = maxval(eigval)
             lowest_bound = maxloc(eigval, 1)
             do i=1,nstates
               if (eigval(i) .gt. -1.d0) then
                 if(eigval(i) .lt. e_lowestBound)then
-                  e_lowestBound = eigval(i)
-                  lowest_bound = i
+                  if (i.ge.n_waitUntilMj)then
+                    e_lowestBound = eigval(i)
+                    lowest_bound = i
+                  endif
                 endif
               else
                 n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
-            write(*,*) 'LOWEST BOUND', eigval(lowest_bound)
+            write(*,*) 'LOWEST BOUND', lowest_bound, nstates,
+     &        eigval(lowest_bound)
 !         coefffornorm(lowest_bound)=1.d0
             coeff(lowest_bound)=1.d0
-            start_occupancy=start_occupancy+cdabs(coeff(lowest_bound))
+            start_occupancy=start_occupancy+
+     &      cdabs(coeff(lowest_bound))**2
             do i=1,nstates
               if (eigval(i) .lt. -1.d0) then
                 coeff(i) = 1.d0
                 occupancy_neg_cont_init=occupancy_neg_cont_init+
-     &          cdabs(coeff(i))
+     &          cdabs(coeff(i))**2
               endif
             enddo
           else
             e_lowestBoundEven = maxval(eigval_e)
             lowest_bound_e = maxloc(eigval_e, 1)
+            if (b_ImpactParam .gt. 0.d0)then
+              n_waitUntilMj = nste/n_jstates
+            endif
             do i=1,nste
               if (eigval_e(i) .gt. -1.d0)then
                 if(eigval_e(i) .lt. e_lowestBoundEven)then
-                  e_lowestBoundEven = eigval_e(i)
-                  lowest_bound_e = i
+                  if (i.ge.n_waitUntilMj)then
+                    e_lowestBoundEven = eigval_e(i)
+                    lowest_bound_e = i
+                  endif
                 endif
               else
                 n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
-            write(*,*) 'LOWEST BOUND EVEN', eigval_e(lowest_bound_e)
+            write(*,*) 'LOWEST BOUND EVEN', lowest_bound_e, nstates,
+     &        eigval_e(lowest_bound_e)
 !         coefffornorm(lowest_bound_e)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_e)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_e)=1.d0/dsqrt(2.d0)
@@ -713,17 +728,23 @@ C           This function redefines nsto=2*n_jstates*nsto
      &      cdabs(coeff(lowest_bound_e))**2
             e_lowestBoundOdd = maxval(eigval_o)
             lowest_bound_o = maxloc(eigval_o, 1) + nste
+            if (b_ImpactParam .gt. 0.d0)then
+              n_waitUntilMj = nsto/n_jstates
+            endif
             do i=1,nsto
               if (eigval_o(i) .gt. -1.d0)then
                 if(eigval_o(i) .lt. e_lowestBoundOdd)then
-                  e_lowestBoundOdd = eigval_o(i)
-                  lowest_bound_o = i + nste
+                  if (i.ge.n_waitUntilMj)then
+                    e_lowestBoundOdd = eigval_o(i)
+                    lowest_bound_o = i + nste
+                  endif
                 endif
               else
                 n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
-            write(*,*) 'LOWEST BOUND ODD', eigval_o(lowest_bound_o-nste)
+            write(*,*) 'LOWEST BOUND ODD', lowest_bound_o, nstates,
+     &        eigval_o(lowest_bound_o-nste)
 !       coefffornorm(lowest_bound_o)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_o)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_o)=1.d0/dsqrt(2.d0)
@@ -746,6 +767,9 @@ C           This function redefines nsto=2*n_jstates*nsto
           endif
 !      coeff=coefffornorm
 !      coeff_prev=coeff
+        do i=1,nstates
+
+        enddo
         endif
 
         allocate(all_eigval_upshifted(nstates))
@@ -809,7 +833,7 @@ c       Except when the ground state dips into the neg. continuum.
           enddo
           ddmatnorm(i)=summe
           ! Artificially make dd unitary
-          dd(i,:)=dd(i,:)/cdabs(summe)
+          ! dd(i,:)=dd(i,:)/cdabs(summe)
         enddo
         ddmatnorm_1=maxval(cdabs(ddmatnorm))
 
@@ -896,18 +920,19 @@ c       Except when the ground state dips into the neg. continuum.
         endif
 
 C       Project forward to the moving basis
-        if ((energy_lowest_bound .lt. -1.d0)
-     &  .or. unfreeze_basis)then
-          coefffornorm=0.d0
-          do i=1,nstates
-            summe=0.d0
-            do k=1,nstates
-              summe=summe+projMatMultipole(i,k)*coeff(k)
-            enddo
-            coefffornorm(i)=summe
-          enddo
-          coeff=coefffornorm
-        endif
+!        if ((energy_lowest_bound .lt. -1.d0)
+!     &  .or. unfreeze_basis)then
+!          coefffornorm=0.d0
+!          do i=1,nstates
+!            summe=0.d0
+!            do k=1,nstates
+!              summe=summe+projMatMultipole(i,k)*coeff(k)
+!            enddo
+!            coefffornorm(i)=summe
+!          enddo
+!          dd=matmul(projMatMultipole,dd)
+!          coeff=coefffornorm
+!        endif
 CC******THE FINAL STEP!!!!!!!!!!!!!!!!
         coefffornorm=0.d0
         total_occupancy=0.d0
@@ -915,36 +940,44 @@ CC******THE FINAL STEP!!!!!!!!!!!!!!!!
           summe=0.d0
           do k=1,nstates
             summe=summe+dd(i,k)*coeff(k)
-            if (z_nuc1.ne.z_nuc2 .and. cdabs(summe)**2.gt.1.d0)then
-              summe = summe/cdabs(summe)
-              exit
-            endif
-            if (z_nuc1.eq.z_nuc2 .and. cdabs(summe)**2.gt.0.5d0)then
-              summe = summe/cdabs(summe)/dsqrt(2.d0)
-              exit
-            endif
+!            if (z_nuc1.ne.z_nuc2 .and. cdabs(summe)**2.gt.1.d0)then
+!              summe = summe/cdabs(summe)
+!              exit
+!            endif
+!            if (z_nuc1.eq.z_nuc2 .and. cdabs(summe)**2.gt.0.5d0)then
+!              summe = summe/cdabs(summe)/dsqrt(2.d0)
+!              exit
+!            endif
           enddo
           coefffornorm(i)=summe
           total_occupancy=total_occupancy+cdabs(summe)**2
-          if (total_occupancy.gt.start_occupancy+
-     &    occupancy_neg_cont_init)then
-            total_occupancy=start_occupancy+occupancy_neg_cont_init
-            exit
-          endif
+!          if (total_occupancy.gt.start_occupancy+
+!     &    occupancy_neg_cont_init)then
+!            total_occupancy=start_occupancy+occupancy_neg_cont_init
+!            exit
+!          endif
         enddo
+        if (total_occupancy.ne.start_occupancy+
+     &    occupancy_neg_cont_init)then
+          write(*,*) 'TOTAL OCCUPANCY', total_occupancy, 'START',
+     &    start_occupancy+occupancy_neg_cont_init
+          coefffornorm=coefffornorm*
+     &    dsqrt(start_occupancy+occupancy_neg_cont_init)/
+     &    dsqrt(total_occupancy)
+        endif
         coeff=coefffornorm
 C       Project back to the frozen basis
-        if (energy_lowest_bound .lt. -1.d0)then
-          coefffornorm=0.d0
-          do i=1,nstates
-            summe=0.d0
-            do k=1,nstates
-              summe=summe+projMatMultipole(i,k)*coeff(k)
-            enddo
-            coefffornorm(i)=summe
-          enddo
-          coeff=coefffornorm
-        endif
+!        if (energy_lowest_bound .lt. -1.d0)then
+!          coefffornorm=0.d0
+!          do i=1,nstates
+!            summe=0.d0
+!            do k=1,nstates
+!              summe=summe+projMatMultipole(i,k)*coeff(k)
+!            enddo
+!            coefffornorm(i)=summe
+!          enddo
+!          coeff=coefffornorm
+!        endif
         if (b_projMatMultipoleAllocated)then
           deallocate(projMatMultipole)
           b_projMatMultipoleAllocated = .false.
@@ -1065,15 +1098,17 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
         endif
 
         Prob_ionisation=0.d0
-        Prob_electron_creation=0.d0
+        count_created_electrons=0.d0
         if(z_nuc1.ne.z_nuc2)then
           do i=1,nstates
             if(eigval(i).gt. 1.d0)then
               Prob_ionisation=Prob_ionisation+cdabs(coeff(i))**2
             endif
             if(eigval(i).lt.-1.d0)then
-              Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i))**2
+              if (i.ne.lowest_bound)then
+                count_created_electrons=count_created_electrons+
+     &          cdabs(coeff(i))**2
+              endif
             endif
           enddo
           deallocate(eigval)
@@ -1083,8 +1118,10 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
               Prob_ionisation=Prob_ionisation+cdabs(coeff(i))**2
             endif
             if(eigval_e(i).lt.-1.d0)then
-              Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i))**2
+              if (i.ne.lowest_bound_e)then
+                count_created_electrons=count_created_electrons+
+     &          cdabs(coeff(i))**2
+              endif
             endif
           enddo
           deallocate(eigval_e)
@@ -1094,29 +1131,29 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
      &        cdabs(coeff(i+nste))**2
             endif
             if(eigval_o(i).lt.-1.d0)then
-              Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i+nste))**2
+              if (i.ne.lowest_bound_o)then
+                count_created_electrons=count_created_electrons+
+     &          cdabs(coeff(i+nste))**2
+              endif
             endif
           enddo
           deallocate(eigval_o)
         endif
         Prob_ionisation=Prob_ionisation/start_occupancy
-        if (ii_xi .eq. xi_stepslower)then
-          occupancy_neg_cont_init = Prob_electron_creation
-        endif
-        Prob_electron_creation=occupancy_neg_cont_init-
-     &  Prob_electron_creation
-        Prob_electron_creation=Prob_electron_creation/
-     &  occupancy_neg_cont_init
+!        if (ii_xi .eq. xi_stepslower)then
+!          occupancy_neg_cont_init = count_created_electrons
+!        endif
+        count_created_electrons=max(occupancy_neg_cont_init-
+     &  count_created_electrons, 0.d0)
 
         if (ii_xi.ne. 0)then
           write(127,*)(ii_xi/abs(ii_xi))*
      &    distance_endP/alpha_bohr_inverse,Prob_ionisation,
-     &    Prob_electron_creation
+     &    count_created_electrons
         elseif(ii_xi.eq. 0)then
           write(127,*)
      &    distance_endP/alpha_bohr_inverse,Prob_ionisation,
-     &    Prob_electron_creation
+     &    count_created_electrons
         endif
 
         vectornorm_1=0.d0
@@ -1135,7 +1172,7 @@ c        coeff=coeff/dsqrt(vectornorm_1)
 
         write(*,*)'I-N DISTANCE',distance_endP/alpha_bohr_inverse
         write(*,*)'IONISATION PROBABILITY',Prob_ionisation
-        write(*,*)'E CREATION PROBABILITY',Prob_electron_creation
+        write(*,*)'E CREATION COUNT',count_created_electrons
 !      pause
         if(ii_xi.eq.xi_stepslower)then
           up_energy=up_energy*1.25d0

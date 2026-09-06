@@ -2450,7 +2450,7 @@ c               endif
      &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),
      &dmat1(2*nm,2*nm),dvdRmat_dkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
      &dvdRmat_dkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
-     &alternate_dmat(2*nm,2*nm,-nkap:nkap)
+     &alternate_dmat(2*nm,2*nm,-nkap:nkap), dmatOrthoCheck(2*nm,2*nm)
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 ttt(nuz),www(nuz),dv_dR(0:2*nkap),el(2*nm)
       common /dist/ distance,Starting_Distance
@@ -2869,12 +2869,19 @@ c       alternate_dmat(i+nm,k+nm,kk)=dmat(i+nm,k+nm)
 
 c DMAT should now be a visible result of calling b_splines
 c Use this for checking orthogonality, comment out when not in use.
-
           do i=1,2*nm
             do k=1,2*nm
               dmat1(i,k)=dmat(i,k)
               alternate_dmat(i,k,kk)=dmat(i,k)
             enddo
+          enddo
+          dmatOrthoCheck = matmul(dmat, transpose(dmat))
+          do i=1,2*nm
+            do k=i,2*nm
+              write(*,*)kk,i,k,dmatOrthoCheck(k,i),dmatOrthoCheck(i,k),
+     &        dmat(i,k)
+            enddo
+            pause
           enddo
 c End of DMAT
 
