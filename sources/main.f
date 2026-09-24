@@ -33,7 +33,7 @@ c     must be constant there)
      &wave_new_at_dip_odd,alt_dmat
       real*8, dimension(:,:,:,:),allocatable:: vmat,wave_new_mj,
      &wave_new_even_mj,wave_new_odd_mj,wave_even_odd_combined
-      real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1
+      real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1,vmat_extra
       real*8, dimension(:,:,:,:,:,:),allocatable::dvdRmatdkb2
       integer, dimension(:,:),allocatable:: number_states,
      &number_states_perm,interactionMat
@@ -85,6 +85,7 @@ c     coeff will need to be 2 dim if I ever use e-e interactions.
       read(1,*) dkb
       read(1,*) Manual_Coeff_Input
       read(1,*) Sudden_approx
+      read(1,*) n_extraVmats
       close(1)
 
       if(z_nuc2.gt. z_nuc1) then
@@ -402,6 +403,7 @@ c      the dv/dr terms required for the CC matrix.
 
         allocate(e(2*nm,-nkap:nkap))
         allocate(vmat(nm,nm,0:2*nkap,nvmat))
+        allocate(vmat_extra(n_extraVmats,nm,nm,1:2*nkap,nvmat))
         allocate(dmat(2*nm,2*nm))
         allocate(dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2))
         allocate(dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2))
@@ -415,7 +417,7 @@ c         Does anything in here depend on xi? Only up_energy changes.
         call b_spline_calculation_no_laser
      &    (nstates,nsto,nste,nm,nu,nkap,number_states,rmin,rmax,
      &    wave,vmat,nvmat,e,up_energy,dmat,
-     &    dvdRmatdkb1,dvdRmatdkb2,alt_dmat)
+     &    dvdRmatdkb1,dvdRmatdkb2,alt_dmat,n_extraVmats,vmat_extra)
         if(ii_xi.eq.xi_stepslower)then
           number_states_perm=number_states
           nstates_perm=nstates
@@ -435,7 +437,7 @@ c         Does anything in here depend on xi? Only up_energy changes.
           i_even_odd_normal = 0
           call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
      &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,
-     &    wave_new,i_even_odd_normal)
+     &    wave_new,i_even_odd_normal,alt_dmat,n_extraVmats,vmat_extra)
         else
           allocate(eigval_o(nsto))
           allocate(eigval_e(nste))
@@ -444,11 +446,13 @@ c         Does anything in here depend on xi? Only up_energy changes.
           i_even_odd_normal = 1
           call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
      &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
-     &    wave_new_even,i_even_odd_normal)
+     &    wave_new_even,i_even_odd_normal,alt_dmat,n_extraVmats,
+     &    vmat_extra)
           i_even_odd_normal = 2
           call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
      &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
-     &    wave_new_odd,i_even_odd_normal)
+     &    wave_new_odd,i_even_odd_normal,alt_dmat,n_extraVmats,
+     &    vmat_extra)
         endif
         d_amuOrig=amu
         d_amjmaxOrig=amj_max
@@ -604,6 +608,7 @@ C           This function redefines nsto=2*n_jstates*nsto
         deallocate(dvdRmatdkb1)
         deallocate(dvdRmatdkb2)
         deallocate(vmat)
+        deallocate(vmat_extra)
         if(z_nuc1.eq.z_nuc2)then
           nstates=nste+nsto
         endif

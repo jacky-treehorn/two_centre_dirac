@@ -10587,7 +10587,7 @@ c$$$      atmp1=a
       VU=1.d3
       IL=1
       IU=nm
-      ABSTOL=1.d-16
+      ABSTOL=1.d-14
 
       LWORK=-1
       LIWORK=-1
@@ -11638,5 +11638,78 @@ c Added in order to get the states better defined 110810.
           Invtd_Kppa_arry=2*abs(kk)-1
         endif
       endif
+      return
+      end
+
+      subroutine GS_Basis_creator_w_anchor(n, a, col_i, b)
+      implicit none
+      integer n, col_i, i, j, k, loop, idx
+      real*8 a(n, n), b(n, n), rs, rsmax
+      real*8, allocatable :: guess_basis(:, :), storage(:)
+      integer, allocatable :: orig_idx(:)
+
+      allocate(guess_basis(n, n))
+      allocate(storage(n))
+      allocate(orig_idx(n))
+
+      orig_idx(1) = col_i
+      guess_basis(:, 1) = a(:, col_i)
+
+      idx = 1
+      do j = 1, n
+         if (j == col_i) cycle
+         idx = idx + 1
+         orig_idx(idx) = j
+         guess_basis(:, idx) = a(:, j)
+      enddo
+
+      rsmax = 1.d0
+      loop = 0
+
+      do while(rsmax.gt.1.d-14 .and. loop.lt.40)
+         loop = loop + 1
+         do i = 1, n-1
+            storage = 0.d0
+            do k = 1, i
+               rs = 0.d0
+               do j = 1, n
+                  rs = rs + guess_basis(j, i+1) * guess_basis(j, k)
+               enddo
+               rs = rs / sum(guess_basis(:, k)**2)
+               storage = storage + guess_basis(:, k) * rs
+            enddo
+            guess_basis(:, i+1) = guess_basis(:, i+1) - storage
+         enddo
+
+         rsmax = 0.d0
+         do i = 1, n
+            do k = i+1, n
+               rs = 0.d0
+               do j = 1, n
+                  rs = rs + guess_basis(j, i) * guess_basis(j, k)
+               enddo
+               if(dabs(rs).gt.rsmax)then
+                  rsmax = dabs(rs)
+               endif
+            enddo
+         enddo
+      enddo
+
+      do i = 1, n
+         rs = dsqrt(sum(guess_basis(:, i)**2))
+         if (rs.gt.1.d-30) then
+            guess_basis(:, i) = guess_basis(:, i) / rs
+         else
+            guess_basis(:, i) = 0.d0
+         endif
+      enddo
+
+      do k = 1, n
+         b(:, orig_idx(k)) = guess_basis(:, k)
+      enddo
+
+      deallocate(orig_idx)
+      deallocate(storage)
+      deallocate(guess_basis)
       return
       end

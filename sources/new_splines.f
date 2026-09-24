@@ -2437,7 +2437,8 @@ c               endif
 
       subroutine b_spline_calculation_no_laser(nstates,nsto,nste,
      &nm,nu,nkap,number_states,rmin,rmax,wave1,vmat,nvmat,
-     &e,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,alternate_dmat)
+     &e,up_energy,dmat1,dvdRmat_dkb1,dvdRmat_dkb2,alternate_dmat,
+     &n_extraVmats,vmat_extra)
       include 'inc.par'
       real*8, dimension(:),allocatable:: u,cc,t
       real*8, dimension(:,:),allocatable:: amat,wave,dmat,b,b_2,dd,d3
@@ -2450,13 +2451,14 @@ c               endif
      &vmat(nm,nm,0:2*nkap,nvmat),e(2*nm,-nkap:nkap),
      &dmat1(2*nm,2*nm),dvdRmat_dkb1(nm,nm,-nkap:nkap,0:2*nkap,2),
      &dvdRmat_dkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2),
-     &alternate_dmat(2*nm,2*nm,-nkap:nkap), dmatOrthoCheck(2*nm,2*nm)
+     &alternate_dmat(2*nm,2*nm,-nkap:nkap),
+     &vmat_extra(n_extraVmats,nm,nm,1:2*nkap,nvmat)
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       real*8 ttt(nuz),www(nuz),dv_dR(0:2*nkap),el(2*nm)
       common /dist/ distance,Starting_Distance
       integer number_states(2,-nkap:nkap)
       integer One_s_state_location,xi_stepslower,xi_stepsupper
-      logical dkb,Manual_ncont_states
+      logical dkb,Manual_ncont_states,b_attenuateMultipoles
       common /neg_cont/ Manual_ncont_states
       common /common_dkb/ dkb
       common /step_progress/ xi_stepslower,xi_stepsupper,ii_xi
@@ -2464,12 +2466,14 @@ c               endif
      &b_ImpactParam
 
       pi4=1.d0/(2.d0)
-
+      b_attenuateMultipoles = .false.
       charge_radius=Targ_mass**(1.d0/3.d0)*1.2d0*alpha_bohr_inverse
       Starting_R1=2.d0*Starting_Distance*Proj_mass/(Proj_mass+Targ_mass)
       Starting_R2=2.d0*Starting_Distance*Targ_mass/(Proj_mass+Targ_mass)
-
-      nul=nu
+      i_runCount = 0
+      vmat_extra=0.d0
+ 42   nul=nu
+      i_runCount = i_runCount + 1
       alternate_dmat=0.d0
       dmat1=0.d0
       dvdRmat_dkb1=0.d0
@@ -2583,6 +2587,18 @@ c     The calculation of the matrix
             call all_potential(nkap,xx,u)
           elseif(z_nuc1.ne.z_nuc2 )then
             call all_potential_baryonic(nkap,xx,u)
+          endif
+
+          if (i_runCount-1 .le. n_extraVmats .and.
+     &    b_attenuateMultipoles .and.
+     &    xx.lt.(distance*(0.5d0 + dble(i_runCount-2)/
+     &    dble(n_extraVmats))))then
+            attenuation=(0.5d0-0.5d0*cos(xx*pi/
+     &        (distance*(0.5d0 + dble(i_runCount-2)/
+     &        dble(n_extraVmats)))))
+            do ll=1,2*nkap
+              u(ll) = u(ll)*attenuation
+            enddo
           endif
 
           do i=inx1-ns+1,inx1
@@ -2875,20 +2891,34 @@ c Use this for checking orthogonality, comment out when not in use.
               alternate_dmat(i,k,kk)=dmat(i,k)
             enddo
           enddo
-          dmatOrthoCheck = matmul(dmat, transpose(dmat))
-          do i=1,2*nm
-            do k=i,2*nm
-              write(*,*)kk,i,k,dmatOrthoCheck(k,i),dmatOrthoCheck(i,k),
-     &        dmat(i,k)
-            enddo
-            pause
-          enddo
 c End of DMAT
 
 c     Solving of the generalized problem for eigenvectors
 c I am guessing that wave is vector v in eq 16 of Johnson
 
           call solve_equation(nm,dmat,amat,cc,wave)
+
+          if (.false.)then
+            do j=1,2*nm
+              do l=j,2*nm
+                dNorm = 0.0
+                do m=1,nm
+                  do n=1,nm
+                    dNorm = dNorm + (wave(m,j)*wave(n,l)*dmat1(m,n)+
+     &              wave(m+nm,j)*wave(n+nm,l)*dmat1(m+nm,n+nm))
+                  enddo
+                enddo
+                if (j.eq.l .and.
+     &            (dNorm.lt.1.d0-1.d-8 .or. dNorm.gt.1.d0+1.d-8))then
+                  write(*,*)'MONOPOLE NORMALIZATION ERROR!',kk,j,l,
+     &            dNorm, 1.d0
+                elseif (j.ne.l .and. dabs(dNorm).gt.1.d-8) then
+                  write(*,*)'MONOPOLE NORMALIZATION ERROR!',kk,j,l,
+     &            dNorm, 0.d0
+                endif
+              enddo
+            enddo
+          endif
 
           if(cc(nm+1).gt. -1.d0) then
             do i=1,2*nm
@@ -2898,6 +2928,9 @@ c I am guessing that wave is vector v in eq 16 of Johnson
               enddo
             enddo
           elseif(cc(nm+1).lt. -1.d0) then
+            if (.not.b_attenuateMultipoles)then
+              b_attenuateMultipoles = .true.
+            endif
             nrange=nm+1
             el=0.d0
             do j=1,nm+1
@@ -2985,50 +3018,93 @@ c I am guessing that wave is vector v in eq 16 of Johnson
         deallocate(dv_1)
         deallocate(dvb)
       endif
+      if (i_runCount-1 .ge. 1 .and. i_runCount-1 .le. n_extraVmats)then
+        vmat_extra(i_runCount-1,:,:,:,:) = vmat(:,:,1:,:)
+      endif
+      if (b_attenuateMultipoles .and.
+     &i_runCount-1 .le. n_extraVmats)then
+        goto 42
+      endif
       return
       end
 
       subroutine buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
      &vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,wave_new,
-     &i_even_odd_normal)
+     &i_even_odd_normal,alt_dmat,n_extraVmats,vmat_extra)
       include 'inc.par'
       integer number_states(2,-nkap:nkap), xi_stepslower
       real*8 wave(2*nm,2*nm,-nkap:nkap),vmat(nm,nm,0:2*nkap,nvmat),
      &e(2*nm,-nkap:nkap),rmin,rmax,eigval(nstates),
-     &wave_new(nstates,2*nm,-nkap:nkap)
+     &wave_new(nstates,2*nm,-nkap:nkap),alt_dmat(2*nm,2*nm,-nkap:nkap),
+     &vmat_extra(n_extraVmats,nm,nm,1:2*nkap,nvmat)
       real*8, dimension(:,:,:),allocatable:: ang
       integer, dimension(:,:), allocatable:: num_st
       real*8, dimension(:,:), allocatable:: amat, eigvec
       character*1 char_even_odd_normal
+      logical b_normalizationError
 
       char_even_odd_normal = 'a'
       allocate(ang(-nkap:nkap,-nkap:nkap,0:2*nkap))
       call store_angle(nkap,ang)
       allocate(num_st(-nkap:nkap,2*nm))
       allocate(amat(nstates,nstates))
-      select case (i_even_odd_normal)
-        case(0)
-          call form_matrix(nm,nkap,nstates,number_states,num_st,
-     &    amat,wave,vmat,nvmat,e,ang,1.d0)
-          char_even_odd_normal = 'a'
-        case(1)
-          call form_matrix_even(nm,nkap,nstates,number_states,num_st,
-     &    amat,wave,vmat,nvmat,e,ang,1.d0)
-          char_even_odd_normal = 'e'
-        case(2)
-          call form_matrix_odd(nm,nkap,nstates,number_states,num_st,
-     &    amat,wave,vmat,nvmat,e,ang,1.d0)
-          char_even_odd_normal = 'o'
-      end select
-      allocate(eigvec(nstates,nstates))
-      call r_diagonal(char_even_odd_normal,nstates,amat,eigval,eigvec)
-      call store_new_wave(nm,nstates,nkap,num_st,wave,
-     &eigvec,wave_new)
-      deallocate(eigvec)
-      call swapping_of_states(wave_new,nstates,nm,nkap,
-     &ii_xi,xi_stepslower,rmin,rmax,eigval,char_even_odd_normal)
-      call sign_of_states(wave_new,nstates,nm,nkap,
-     &ii_xi,xi_stepslower,rmin,rmax,char_even_odd_normal)
+      do i_tryModVmat=0,n_extraVmats+1
+        if (i_tryModVmat.ge.1)then
+          vmat(:,:,1:,:)=vmat_extra(i_tryModVmat,:,:,:,:)
+        endif
+        select case (i_even_odd_normal)
+          case(0)
+            call form_matrix(nm,nkap,nstates,number_states,num_st,
+     &      amat,wave,vmat,nvmat,e,ang,1.d0)
+            char_even_odd_normal = 'a'
+          case(1)
+            call form_matrix_even(nm,nkap,nstates,number_states,num_st,
+     &      amat,wave,vmat,nvmat,e,ang,1.d0)
+            char_even_odd_normal = 'e'
+          case(2)
+            call form_matrix_odd(nm,nkap,nstates,number_states,num_st,
+     &      amat,wave,vmat,nvmat,e,ang,1.d0)
+            char_even_odd_normal = 'o'
+        end select
+        allocate(eigvec(nstates,nstates))
+        call r_diagonal(char_even_odd_normal,nstates,amat,eigval,
+     &  eigvec)
+        call store_new_wave(nm,nstates,nkap,num_st,wave,
+     &  eigvec,wave_new)
+        deallocate(eigvec)
+        call swapping_of_states(wave_new,nstates,nm,nkap,
+     &  ii_xi,xi_stepslower,rmin,rmax,eigval,char_even_odd_normal)
+        call sign_of_states(wave_new,nstates,nm,nkap,
+     &  ii_xi,xi_stepslower,rmin,rmax,char_even_odd_normal)
+        b_normalizationError = .false.
+        do j=1,nstates
+          do l=j+1,nstates
+            dNorm = 0.0
+            do kk=-nkap,nkap
+              if (kk .eq. 0)then
+                cycle
+              endif
+              do m=1,nm
+                do n=1,nm
+                  dNorm = dNorm + (wave_new(j,m,kk)*
+     &            wave_new(l,n,kk)*alt_dmat(m,n,kk)+
+     &            wave_new(j,m+nm,kk)*
+     &            wave_new(l,n+nm,kk)*alt_dmat(m+nm,n+nm,kk))
+                enddo
+              enddo
+            enddo
+            if (dabs(dNorm).gt.1.d-8) then
+              write(*,*)'MULTIPOLE '//char_even_odd_normal//
+     &        ' DEGENERACY!',j,l,
+     &        i_tryModVmat,dNorm, 0.d0, eigval(j), eigval(l)
+              b_normalizationError = .true.
+            endif
+            if (b_normalizationError) exit
+          enddo
+          if (b_normalizationError) exit
+        enddo
+        if (.not.b_normalizationError) exit
+      enddo
       deallocate(amat)
       deallocate(num_st)
       deallocate(ang)

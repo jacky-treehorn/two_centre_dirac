@@ -13,3 +13,4 @@
       T                 !dkb basis on or off
       T                 !Input of start states manually
       F                 !Sudden approximation on or off
+      10                !Number of extra vmats to create when e(1s) < -1
