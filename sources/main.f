@@ -844,6 +844,8 @@ c         Except when the ground state dips into the neg. continuum.
             summe=summe+dd(i,j)
           enddo
           ddmatnorm(i)=summe
+          ! Artificially make dd unitary
+          dd(i,:)=dd(i,:)/cdabs(summe)
         enddo
         ddmatnorm_1=maxval(cdabs(ddmatnorm))
 
@@ -991,6 +993,10 @@ C       Project back to the frozen basis
 !          enddo
 !          coeff=coefffornorm
 !        endif
+        if (b_projMatMultipoleAllocated)then
+          deallocate(projMatMultipole)
+          b_projMatMultipoleAllocated = .false.
+        endif
         if (b_projMatMultipoleAllocated)then
           deallocate(projMatMultipole)
           b_projMatMultipoleAllocated = .false.

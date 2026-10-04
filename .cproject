@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="photran.managedbuild.config.intel.fortran.exe.x86_64.debug.1726023091">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="photran.managedbuild.config.intel.fortran.exe.x86_64.debug.1726023091" moduleId="org.eclipse.cdt.core.settings" name="Debug">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" description="" id="photran.managedbuild.config.intel.fortran.exe.x86_64.debug.1726023091" name="Debug" parent="photran.managedbuild.config.intel.fortran.exe.x86_64.debug">
+					<folderInfo id="photran.managedbuild.config.intel.fortran.exe.x86_64.debug.1726023091." name="/" resourcePath="">
+						<toolChain id="photran.managedbuild.toolchain.intel.fortran.exe.x86_64.debug.1937322037" name="Intel(R) Fortran Toolchain on Intel(R) 64" superClass="photran.managedbuild.toolchain.intel.fortran.exe.x86_64.debug" targetTool="photran.managedbuild.tool.intel.fortran.archiver;photran.managedbuild.tool.gnu.fortran.linker" unusedChildren="photran.managedbuild.tool.intel.fortran.compiler.exe.x86_64.debug;photran.managedbuild.tool.intel.fortran.linker.exe.x86_64.debug">
+							<targetPlatform id="photran.managedbuild.target.intel.platform.exe.x86_64.debug.1002986442" name="Intel(R) 64 Platform" superClass="photran.managedbuild.target.intel.platform.exe.x86_64.debug"/>
+							<builder buildPath="${workspace_loc:/two_centre_dirac}/Debug" id="photran.managedbuild.target.intel.builder.exe.x86_64.debug.67840890" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="photran.managedbuild.target.intel.builder.exe.x86_64.debug"/>
+							<tool id="photran.managedbuild.tool.intel.gnu.c.compiler.exe.x86_64.debug.1052927396" name="GCC C Compiler" superClass="photran.managedbuild.tool.intel.gnu.c.compiler.exe.x86_64.debug">
+								<option defaultValue="gnu.c.optimization.level.none" id="photran.intel.gnu.c.compiler.exe.x86_64.debug.option.optimization.level.2030981439" name="Optimization Level" superClass="photran.intel.gnu.c.compiler.exe.x86_64.debug.option.optimization.level" valueType="enumerated"/>
+								<option defaultValue="gnu.c.debugging.level.max" id="photran.intel.gnu.c.compiler.exe.x86_64.debug.option.debugging.level.1214856811" name="Debug Level" superClass="photran.intel.gnu.c.compiler.exe.x86_64.debug.option.debugging.level" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.124822948" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="photran.managedbuild.tool.gnu.fortran.compiler.exe.debug.1445784857" name="GNU Fortran Compiler" superClass="photran.managedbuild.tool.gnu.fortran.compiler.exe.debug">
+								<inputType id="photran.managedbuild.tool.gnu.fortran.compiler.input.481510894" superClass="photran.managedbuild.tool.gnu.fortran.compiler.input"/>
+							</tool>
+							<tool id="photran.managedbuild.tool.intel.fortran.archiver.x86_64.base.999926064" name="Archiver" superClass="photran.managedbuild.tool.intel.fortran.archiver.x86_64.base"/>
+							<tool id="photran.managedbuild.tool.gnu.fortran.linker.1690332988" name="GNU Fortran Linker" superClass="photran.managedbuild.tool.gnu.fortran.linker">
+								<inputType id="photran.managedbuild.tool.gnu.fortran.linker.input.520352566" superClass="photran.managedbuild.tool.gnu.fortran.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+							</tool>
+							<tool id="photran.managedbuild.tool.intel.gnu.assembler.exe.x86_64.debug.483786287" name="GCC Assembler" superClass="photran.managedbuild.tool.intel.gnu.assembler.exe.x86_64.debug">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.769104649" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="photran.managedbuild.config.intel.fortran.exe.x86_64.release.1025250192">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="photran.managedbuild.config.intel.fortran.exe.x86_64.release.1025250192" moduleId="org.eclipse.cdt.core.settings" name="Release">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" description="" id="photran.managedbuild.config.intel.fortran.exe.x86_64.release.1025250192" name="Release" parent="photran.managedbuild.config.intel.fortran.exe.x86_64.release">
+					<folderInfo id="photran.managedbuild.config.intel.fortran.exe.x86_64.release.1025250192." name="/" resourcePath="">
+						<toolChain id="photran.managedbuild.toolchain.intel.fortran.exe.x86_64.release.105054703" name="Intel(R) Fortran Toolchain on Intel(R) 64" superClass="photran.managedbuild.toolchain.intel.fortran.exe.x86_64.release" targetTool="photran.managedbuild.tool.intel.fortran.archiver;photran.managedbuild.tool.gnu.fortran.linker" unusedChildren="photran.managedbuild.tool.intel.fortran.linker.exe.x86_64.release;photran.managedbuild.tool.intel.fortran.compiler.exe.x86_64.release">
+							<targetPlatform id="photran.managedbuild.target.intel.platform.fortran.exe.x86_64.release.520906314" name="Intel(R) 64 Platform" superClass="photran.managedbuild.target.intel.platform.fortran.exe.x86_64.release"/>
+							<builder buildPath="${workspace_loc:/two_centre_dirac}/Release" id="photran.managedbuild.target.intel.builder.exe.x86_64.release.1980609580" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="photran.managedbuild.target.intel.builder.exe.x86_64.release"/>
+							<tool id="photran.managedbuild.tool.intel.gnu.c.compiler.exe.x86_64.release.1442596576" name="GCC C Compiler" superClass="photran.managedbuild.tool.intel.gnu.c.compiler.exe.x86_64.release">
+								<option defaultValue="gnu.c.optimization.level.most" id="photran.intel.gnu.c.compiler.exe.x86_64.release.option.optimization.level.1721956717" name="Optimization Level" superClass="photran.intel.gnu.c.compiler.exe.x86_64.release.option.optimization.level" valueType="enumerated"/>
+								<option defaultValue="gnu.c.debugging.level.none" id="photran.intel.gnu.c.compiler.exe.x86_64.release.option.debugging.level.180268952" name="Debug Level" superClass="photran.intel.gnu.c.compiler.exe.x86_64.release.option.debugging.level" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1545993687" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="photran.managedbuild.tool.gnu.fortran.compiler.exe.debug.992777927" name="GNU Fortran Compiler" superClass="photran.managedbuild.tool.gnu.fortran.compiler.exe.debug"/>
+							<tool id="photran.managedbuild.tool.intel.fortran.archiver.x86_64.base.257823185" name="Archiver" superClass="photran.managedbuild.tool.intel.fortran.archiver.x86_64.base"/>
+							<tool id="photran.managedbuild.tool.gnu.fortran.linker.1830094037" name="GNU Fortran Linker" superClass="photran.managedbuild.tool.gnu.fortran.linker"/>
+							<tool id="photran.managedbuild.tool.intel.gnu.assembler.exe.x86_64.release.1428566425" name="GCC Assembler" superClass="photran.managedbuild.tool.intel.gnu.assembler.exe.x86_64.release">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1056324337" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="two_centre_dirac.photran.managedbuild.target.intel.fortran.exe.1040955937" name="Executable (Intel(R) Fortran)" projectType="photran.managedbuild.target.intel.fortran.exe"/>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/two_centre_dirac"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/two_centre_dirac"/>
+		</configuration>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="photran.managedbuild.config.intel.fortran.exe.x86_64.release.1025250192;photran.managedbuild.config.intel.fortran.exe.x86_64.release.1025250192.;photran.managedbuild.tool.intel.gnu.c.compiler.exe.x86_64.release.1442596576;cdt.managedbuild.tool.gnu.c.compiler.input.1545993687">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="photran.managedbuild.toolchain.intel.fortran.x86_64.base.1805773543;photran.managedbuild.toolchain.intel.fortran.x86_64.base.1805773543.197417708;photran.managedbuild.tool.intel.gnu.c.compiler.x86_64.base.711303945;cdt.managedbuild.tool.gnu.c.compiler.input.447254191">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="photran.managedbuild.toolchain.intel.fortran.x86_64.base.1805773543;photran.managedbuild.toolchain.intel.fortran.x86_64.base.1805773543.197417708;photran.managedbuild.tool.intel.gnu.c.compiler.ipf.base.388350021;cdt.managedbuild.tool.gnu.c.compiler.input.1696465498">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+	</storageModule>
+</cproject>
