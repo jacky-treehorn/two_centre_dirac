@@ -56,7 +56,7 @@ c     coeff will need to be 2 dim if I ever use e-e interactions.
       common /input_directory/ inp_dir
       logical Manual_Coeff_Input,dkb,Sudden_approx,
      &state_range_input,
-     &Manual_ncont_states,dipping_wave_allocated,!mkdirs,
+     &Manual_ncont_states,dipping_wave_allocated,b_useInteractionMat,
      &unfreeze_basis,b_projMatMultipoleAllocated
       inp_dir = 'input_output/'
       call factor()
@@ -86,6 +86,7 @@ c     coeff will need to be 2 dim if I ever use e-e interactions.
       read(1,*) Manual_Coeff_Input
       read(1,*) Sudden_approx
       read(1,*) n_extraVmats
+      read(1,*) b_useInteractionMat
       close(1)
 
       if(z_nuc2.gt. z_nuc1) then
@@ -413,7 +414,6 @@ c      the dv/dr terms required for the CC matrix.
 
         write(*,*) 'SIZE OF MATRIX',4*(nm**2)*(2*nkap+2)*8/1000000,'MB'
         write(*,*) 'ENTERING B_SPLINE_CALCULATION'
-c         Does anything in here depend on xi? Only up_energy changes.
         call b_spline_calculation_no_laser
      &    (nstates,nsto,nste,nm,nu,nkap,number_states,rmin,rmax,
      &    wave,vmat,nvmat,e,up_energy,dmat,
@@ -454,6 +454,7 @@ c         Does anything in here depend on xi? Only up_energy changes.
      &    wave_new_odd,i_even_odd_normal,alt_dmat,n_extraVmats,
      &    vmat_extra)
         endif
+        deallocate(vmat_extra)
         d_amuOrig=amu
         d_amjmaxOrig=amj_max
         call DiracAngularJ(dble(nkap),d_mjMax)
@@ -608,7 +609,6 @@ C           This function redefines nsto=2*n_jstates*nsto
         deallocate(dvdRmatdkb1)
         deallocate(dvdRmatdkb2)
         deallocate(vmat)
-        deallocate(vmat_extra)
         if(z_nuc1.eq.z_nuc2)then
           nstates=nste+nsto
         endif
@@ -777,58 +777,65 @@ C           This function redefines nsto=2*n_jstates*nsto
         enddo
         endif
 
-        allocate(all_eigval_upshifted(nstates))
-        allocate(interactionMat(nstates,nstates))
-        interactionMat = 1
-        if(z_nuc1.ne.z_nuc2)then
-          all_eigval_upshifted = eigval + 1.d0
-        else
-          all_eigval_upshifted(1:nste)=eigval_e + 1.d0
-          all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
-        endif
-        do i=1,nstates
-          do j=1,nstates
-            if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
-     &      .lt.0.d0))then
-              interactionMat(i,j) = 0
-            endif
-c           Make vacuum states non interacting.
-            if((all_eigval_upshifted(i).lt.0.d0) .and. (i.ne.j))then
-              interactionMat(i,j) = 0
-            endif
-          enddo
-        enddo
-c       Except when the ground state dips into the neg. continuum.
-        if (z_nuc1.ne.z_nuc2)then
-          if (all_eigval_upshifted(lowest_bound) .lt. 0.d0) then
-            interactionMat(lowest_bound,:) = 1
-            interactionMat(:,lowest_bound) = 1
-          endif
-        else
-          if (all_eigval_upshifted(lowest_bound_e) .lt. 0.d0) then
-            interactionMat(lowest_bound_e,:) = 1
-            interactionMat(:,lowest_bound_e) = 1
-          endif
-          if (all_eigval_upshifted(lowest_bound_o) .lt. 0.d0) then
-            interactionMat(lowest_bound_o,:) = 1
-            interactionMat(:,lowest_bound_o) = 1
-          endif
-        endif
-        deallocate(all_eigval_upshifted)
-
         dd=0.d0
         do i=1,nstates
           do j=1,nstates
-            if (interactionMat(i,j).eq.1)then
-              do k=1,nstates
-                dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
-              enddo
-            endif
+            do k=1,nstates
+              dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
+            enddo
           enddo
         enddo
-        deallocate(interactionMat)
         deallocate(pp)
         deallocate(aaeigvecr)
+        if (b_useInteractionMat)then
+          allocate(all_eigval_upshifted(nstates))
+          allocate(interactionMat(nstates,nstates))
+          interactionMat = 1
+          if(z_nuc1.ne.z_nuc2)then
+            all_eigval_upshifted = eigval + 1.d0
+          else
+            all_eigval_upshifted(1:nste)=eigval_e + 1.d0
+            all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
+          endif
+          do i=1,nstates
+            do j=1,nstates
+              if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
+     &        .lt.0.d0))then
+                interactionMat(i,j) = 0
+              endif
+c             Make vacuum states non interacting.
+              if((all_eigval_upshifted(i).lt.0.d0) .and. (i.ne.j))then
+                interactionMat(i,j) = 0
+              endif
+            enddo
+          enddo
+c         Except when the ground state dips into the neg. continuum.
+          if (z_nuc1.ne.z_nuc2)then
+            if (all_eigval_upshifted(lowest_bound) .lt. 0.d0) then
+              interactionMat(lowest_bound,:) = 1
+              interactionMat(:,lowest_bound) = 1
+            endif
+          else
+            if (all_eigval_upshifted(lowest_bound_e) .lt. 0.d0) then
+              interactionMat(lowest_bound_e,:) = 1
+              interactionMat(:,lowest_bound_e) = 1
+            endif
+            if (all_eigval_upshifted(lowest_bound_o) .lt. 0.d0) then
+              interactionMat(lowest_bound_o,:) = 1
+              interactionMat(:,lowest_bound_o) = 1
+            endif
+          endif
+          deallocate(all_eigval_upshifted)
+
+          do i=1,nstates
+            do j=1,nstates
+              if (interactionMat(i,j).ne.1)then
+                dd(i,j)=0.d0
+              endif
+            enddo
+          enddo
+          deallocate(interactionMat)
+        endif
 
         allocate(ddmatnorm(nstates))
         do i=1,nstates
@@ -837,8 +844,6 @@ c       Except when the ground state dips into the neg. continuum.
             summe=summe+dd(i,j)
           enddo
           ddmatnorm(i)=summe
-          ! Artificially make dd unitary
-          ! dd(i,:)=dd(i,:)/cdabs(summe)
         enddo
         ddmatnorm_1=maxval(cdabs(ddmatnorm))
 
@@ -925,6 +930,9 @@ c       Except when the ground state dips into the neg. continuum.
         endif
 
 C       Project forward to the moving basis
+C       This may not be necessary??
+C       Negative energy spectrum can be gently manipulated via potential
+C       To avoid degeneracies with 1_sigma
 !        if ((energy_lowest_bound .lt. -1.d0)
 !     &  .or. unfreeze_basis)then
 !          coefffornorm=0.d0
