@@ -1,3 +1,4 @@
+C     FIXED FORM
 c     RELATIVISTIC UNITS (c=\hbar=m=1) are used everywhere in the program
 c     except the files, which contain potentials. Since these files
 c     initially come from Ilya, they contain potentials in
@@ -9,7 +10,7 @@ c     must be constant there)
       common /r_nuc/ r01,r02
       common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
      &b_ImpactParam
-      common /dist/distance,Starting_Distance
+      common /dist/ distance,Starting_Distance
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /ferm/ cf1,af1,cf2,af2
       common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
@@ -32,7 +33,7 @@ c     must be constant there)
      &wave_new_at_dip_odd,alt_dmat
       real*8, dimension(:,:,:,:),allocatable:: vmat,wave_new_mj,
      &wave_new_even_mj,wave_new_odd_mj,wave_even_odd_combined
-      real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1
+      real*8, dimension(:,:,:,:,:),allocatable::dvdRmatdkb1,vmat_extra
       real*8, dimension(:,:,:,:,:,:),allocatable::dvdRmatdkb2
       integer, dimension(:,:),allocatable:: number_states,
      &number_states_perm,interactionMat
@@ -40,6 +41,7 @@ c     must be constant there)
      &aaeigvecr,mm,mmeven,mmodd,bb_mjj,bb_mjj_even,bb_mjj_odd
       complex*16, dimension(:), allocatable :: ddmatnorm,coeff,
      &coefffornorm!,coefffornorm_prev
+c     coeff will need to be 2 dim if I ever use e-e interactions.
       real*8 i_xi,i_xi_next,i_xi_prev, energy_lowest_bound
       integer en_eval1,en_eval1j,xi_stepslower,xi_stepsupper,
      &c_ivalues(8)
@@ -53,8 +55,8 @@ c     must be constant there)
       character*13 inp_dir
       common /input_directory/ inp_dir
       logical Manual_Coeff_Input,dkb,Sudden_approx,
-     &state_range_input,Plots_wanted,Recoil_on_off,
-     &init_recoil,Manual_ncont_states,dipping_wave_allocated,!mkdirs,
+     &state_range_input,
+     &Manual_ncont_states,dipping_wave_allocated,b_useInteractionMat,
      &unfreeze_basis,b_projMatMultipoleAllocated
       inp_dir = 'input_output/'
       call factor()
@@ -83,11 +85,9 @@ c     must be constant there)
       read(1,*) dkb
       read(1,*) Manual_Coeff_Input
       read(1,*) Sudden_approx
-      read(1,*) Plots_wanted
-      read(1,*) Recoil_on_off
+      read(1,*) n_extraVmats
+      read(1,*) b_useInteractionMat
       close(1)
-
-      init_recoil=Recoil_on_off
 
       if(z_nuc2.gt. z_nuc1) then
          open(1,file=inp_dir//'inp.inp',status='old')
@@ -216,8 +216,8 @@ c      if(Nuc_model.eq.3)then
          cf2=dsqrt(dsqrt(bsh**2-dsh)-bsh)
       endif
 
-      r01=r_sq1*0.0025896063d0
-      r02=r_sq2*0.0025896063d0
+      r01=r_sq1*alpha_bohr_inverse
+      r02=r_sq2*alpha_bohr_inverse
 
 c     call test_potentials(nkap)
 c     For the case of homogeneously charged sphere we have to
@@ -322,7 +322,7 @@ c     &Proj_vel,0.11394267720000001d0,0.d0,dThetadXi)
         !0.5d0*derfc(R_std_dev*
 c     &(dabs(2.d0*distance)-(dabs(2.d0*Starting_distance)-
 c     &min(1.d0/R_std_dev,Starting_distance))))
-         write(*,*)'TRANSLATION FACTOR',Translation_factor
+        write(*,*)'TRANSLATION FACTOR',Translation_factor
 
         RadiusOne=2.d0*distance*Proj_mass/(Proj_mass+Targ_mass)
         RadiusTwo=2.d0*distance*Targ_mass/(Proj_mass+Targ_mass)
@@ -332,7 +332,8 @@ c     &min(1.d0/R_std_dev,Starting_distance))))
 
         write(*,*)'RADIUS ONE', RadiusOne
         write(*,*)'RADIUS TWO', RadiusTwo
-        write(*,*)'INTERNUCLEAR DISTANCE',distance*2.d0/0.0025896d0
+        write(*,*)'INTERNUCLEAR DISTANCE',distance*2.d0/
+     &  alpha_bohr_inverse
 
         if(.not.sudden_approx) then
           call DofRwrtXi(1.d0*z_nuc1,1.d0*z_nuc2,Proj_mass,Targ_mass,
@@ -388,8 +389,8 @@ c         cf2=dsqrt(dsqrt(bsh**2-dsh)-bsh)
 c      endif
 c      endif
 
-c      r01=r_sq1*0.0025896063d0
-c      r02=r_sq2*0.0025896063d0
+c      r01=r_sq1*alpha_bohr_inverse
+c      r02=r_sq2*alpha_bohr_inverse
 
 c      call test_potentials(nkap)
 c      For the case of homogeneously charged sphere we have to
@@ -403,6 +404,7 @@ c      the dv/dr terms required for the CC matrix.
 
         allocate(e(2*nm,-nkap:nkap))
         allocate(vmat(nm,nm,0:2*nkap,nvmat))
+        allocate(vmat_extra(n_extraVmats,nm,nm,1:2*nkap,nvmat))
         allocate(dmat(2*nm,2*nm))
         allocate(dvdRmatdkb1(nm,nm,-nkap:nkap,0:2*nkap,2))
         allocate(dvdRmatdkb2(nm,nm,-nkap:nkap,-nkap:nkap,0:2*nkap,2))
@@ -412,11 +414,10 @@ c      the dv/dr terms required for the CC matrix.
 
         write(*,*) 'SIZE OF MATRIX',4*(nm**2)*(2*nkap+2)*8/1000000,'MB'
         write(*,*) 'ENTERING B_SPLINE_CALCULATION'
-c         Does anything in here depend on xi? Only up_energy changes.
         call b_spline_calculation_no_laser
      &    (nstates,nsto,nste,nm,nu,nkap,number_states,rmin,rmax,
      &    wave,vmat,nvmat,e,up_energy,dmat,
-     &    dvdRmatdkb1,dvdRmatdkb2,alt_dmat)
+     &    dvdRmatdkb1,dvdRmatdkb2,alt_dmat,n_extraVmats,vmat_extra)
         if(ii_xi.eq.xi_stepslower)then
           number_states_perm=number_states
           nstates_perm=nstates
@@ -436,7 +437,7 @@ c         Does anything in here depend on xi? Only up_energy changes.
           i_even_odd_normal = 0
           call buildMultipoleBasis(nm,nkap,nstates,number_states,wave,
      &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval,
-     &    wave_new,i_even_odd_normal)
+     &    wave_new,i_even_odd_normal,alt_dmat,n_extraVmats,vmat_extra)
         else
           allocate(eigval_o(nsto))
           allocate(eigval_e(nste))
@@ -445,12 +446,15 @@ c         Does anything in here depend on xi? Only up_energy changes.
           i_even_odd_normal = 1
           call buildMultipoleBasis(nm,nkap,nste,number_states,wave,
      &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_e,
-     &    wave_new_even,i_even_odd_normal)
+     &    wave_new_even,i_even_odd_normal,alt_dmat,n_extraVmats,
+     &    vmat_extra)
           i_even_odd_normal = 2
           call buildMultipoleBasis(nm,nkap,nsto,number_states,wave,
      &    vmat,nvmat,e, ii_xi, xi_stepslower,rmin,rmax,eigval_o,
-     &    wave_new_odd,i_even_odd_normal)
+     &    wave_new_odd,i_even_odd_normal,alt_dmat,n_extraVmats,
+     &    vmat_extra)
         endif
+        deallocate(vmat_extra)
         d_amuOrig=amu
         d_amjmaxOrig=amj_max
         call DiracAngularJ(dble(nkap),d_mjMax)
@@ -670,44 +674,58 @@ C           This function redefines nsto=2*n_jstates*nsto
           write(How_fast,195)int(Proj_vel*1000.d0)
   195     format(I4.4)
           n_vacuum_states = 0
+          n_waitUntilMj = 0
           if(z_nuc1.ne.z_nuc2)then
+            if (b_ImpactParam .gt. 0.d0)then
+              n_waitUntilMj = n_jstates/n_jstates
+            endif
             e_lowestBound = maxval(eigval)
             lowest_bound = maxloc(eigval, 1)
             do i=1,nstates
               if (eigval(i) .gt. -1.d0) then
                 if(eigval(i) .lt. e_lowestBound)then
-                  e_lowestBound = eigval(i)
-                  lowest_bound = i
+                  if (i.ge.n_waitUntilMj)then
+                    e_lowestBound = eigval(i)
+                    lowest_bound = i
+                  endif
                 endif
               else
                 n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
-            write(*,*) 'LOWEST BOUND', eigval(lowest_bound)
+            write(*,*) 'LOWEST BOUND', lowest_bound, nstates,
+     &        eigval(lowest_bound)
 !         coefffornorm(lowest_bound)=1.d0
             coeff(lowest_bound)=1.d0
-            start_occupancy=start_occupancy+cdabs(coeff(lowest_bound))
+            start_occupancy=start_occupancy+
+     &      cdabs(coeff(lowest_bound))**2
             do i=1,nstates
               if (eigval(i) .lt. -1.d0) then
                 coeff(i) = 1.d0
                 occupancy_neg_cont_init=occupancy_neg_cont_init+
-     &          cdabs(coeff(i))
+     &          cdabs(coeff(i))**2
               endif
             enddo
           else
             e_lowestBoundEven = maxval(eigval_e)
             lowest_bound_e = maxloc(eigval_e, 1)
+            if (b_ImpactParam .gt. 0.d0)then
+              n_waitUntilMj = nste/n_jstates
+            endif
             do i=1,nste
               if (eigval_e(i) .gt. -1.d0)then
                 if(eigval_e(i) .lt. e_lowestBoundEven)then
-                  e_lowestBoundEven = eigval_e(i)
-                  lowest_bound_e = i
+                  if (i.ge.n_waitUntilMj)then
+                    e_lowestBoundEven = eigval_e(i)
+                    lowest_bound_e = i
+                  endif
                 endif
               else
                 n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
-            write(*,*) 'LOWEST BOUND EVEN', eigval_e(lowest_bound_e)
+            write(*,*) 'LOWEST BOUND EVEN', lowest_bound_e, nstates,
+     &        eigval_e(lowest_bound_e)
 !         coefffornorm(lowest_bound_e)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_e)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_e)=1.d0/dsqrt(2.d0)
@@ -715,17 +733,23 @@ C           This function redefines nsto=2*n_jstates*nsto
      &      cdabs(coeff(lowest_bound_e))**2
             e_lowestBoundOdd = maxval(eigval_o)
             lowest_bound_o = maxloc(eigval_o, 1) + nste
+            if (b_ImpactParam .gt. 0.d0)then
+              n_waitUntilMj = nsto/n_jstates
+            endif
             do i=1,nsto
               if (eigval_o(i) .gt. -1.d0)then
                 if(eigval_o(i) .lt. e_lowestBoundOdd)then
-                  e_lowestBoundOdd = eigval_o(i)
-                  lowest_bound_o = i + nste
+                  if (i.ge.n_waitUntilMj)then
+                    e_lowestBoundOdd = eigval_o(i)
+                    lowest_bound_o = i + nste
+                  endif
                 endif
               else
                 n_vacuum_states = n_vacuum_states + 1
               endif
             enddo
-            write(*,*) 'LOWEST BOUND ODD', eigval_o(lowest_bound_o-nste)
+            write(*,*) 'LOWEST BOUND ODD', lowest_bound_o, nstates,
+     &        eigval_o(lowest_bound_o-nste)
 !       coefffornorm(lowest_bound_o)=1.d0/dsqrt(2.d0)
 !         coefffornorm_prev(lowest_bound_o)=1.d0/dsqrt(2.d0)
             coeff(lowest_bound_o)=1.d0/dsqrt(2.d0)
@@ -748,60 +772,70 @@ C           This function redefines nsto=2*n_jstates*nsto
           endif
 !      coeff=coefffornorm
 !      coeff_prev=coeff
-        endif
-
-        allocate(all_eigval_upshifted(nstates))
-        allocate(interactionMat(nstates,nstates))
-        interactionMat = 1
-        if(z_nuc1.ne.z_nuc2)then
-          all_eigval_upshifted = eigval + 1.d0
-        else
-          all_eigval_upshifted(1:nste)=eigval_e + 1.d0
-          all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
-        endif
         do i=1,nstates
-          do j=1,nstates
-            if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
-     &      .lt.0.d0))then
-              interactionMat(i,j) = 0
-            endif
-c           Make vacuum states non interacting.
-            if((all_eigval_upshifted(i).lt.0.d0) .and. (i.ne.j))then
-              interactionMat(i,j) = 0
-            endif
-          enddo
+
         enddo
-c       Except when the ground state dips into the neg. continuum.
-        if (z_nuc1.ne.z_nuc2)then
-          if (all_eigval_upshifted(lowest_bound) .lt. 0.d0) then
-            interactionMat(lowest_bound,:) = 1
-            interactionMat(:,lowest_bound) = 1
-          endif
-        else
-          if (all_eigval_upshifted(lowest_bound_e) .lt. 0.d0) then
-            interactionMat(lowest_bound_e,:) = 1
-            interactionMat(:,lowest_bound_e) = 1
-          endif
-          if (all_eigval_upshifted(lowest_bound_o) .lt. 0.d0) then
-            interactionMat(lowest_bound_o,:) = 1
-            interactionMat(:,lowest_bound_o) = 1
-          endif
         endif
-        deallocate(all_eigval_upshifted)
 
         dd=0.d0
         do i=1,nstates
           do j=1,nstates
-            if (interactionMat(i,j).eq.1)then
-              do k=1,nstates
-                dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
-              enddo
-            endif
+            do k=1,nstates
+              dd(i,j)=dd(i,j)+aaeigvecr(i,k)*pp(k,j)
+            enddo
           enddo
         enddo
-        deallocate(interactionMat)
         deallocate(pp)
         deallocate(aaeigvecr)
+        if (b_useInteractionMat)then
+          allocate(all_eigval_upshifted(nstates))
+          allocate(interactionMat(nstates,nstates))
+          interactionMat = 1
+          if(z_nuc1.ne.z_nuc2)then
+            all_eigval_upshifted = eigval + 1.d0
+          else
+            all_eigval_upshifted(1:nste)=eigval_e + 1.d0
+            all_eigval_upshifted(1+nste:)=eigval_o + 1.d0
+          endif
+          do i=1,nstates
+            do j=1,nstates
+              if ((all_eigval_upshifted(i)*all_eigval_upshifted(j)
+     &        .lt.0.d0))then
+                interactionMat(i,j) = 0
+              endif
+c             Make vacuum states non interacting.
+              if((all_eigval_upshifted(i).lt.0.d0) .and. (i.ne.j))then
+                interactionMat(i,j) = 0
+              endif
+            enddo
+          enddo
+c         Except when the ground state dips into the neg. continuum.
+          if (z_nuc1.ne.z_nuc2)then
+            if (all_eigval_upshifted(lowest_bound) .lt. 0.d0) then
+              interactionMat(lowest_bound,:) = 1
+              interactionMat(:,lowest_bound) = 1
+            endif
+          else
+            if (all_eigval_upshifted(lowest_bound_e) .lt. 0.d0) then
+              interactionMat(lowest_bound_e,:) = 1
+              interactionMat(:,lowest_bound_e) = 1
+            endif
+            if (all_eigval_upshifted(lowest_bound_o) .lt. 0.d0) then
+              interactionMat(lowest_bound_o,:) = 1
+              interactionMat(:,lowest_bound_o) = 1
+            endif
+          endif
+          deallocate(all_eigval_upshifted)
+
+          do i=1,nstates
+            do j=1,nstates
+              if (interactionMat(i,j).ne.1)then
+                dd(i,j)=0.d0
+              endif
+            enddo
+          enddo
+          deallocate(interactionMat)
+        endif
 
         allocate(ddmatnorm(nstates))
         do i=1,nstates
@@ -898,18 +932,22 @@ c       Except when the ground state dips into the neg. continuum.
         endif
 
 C       Project forward to the moving basis
-        if ((energy_lowest_bound .lt. -1.d0)
-     &  .or. unfreeze_basis)then
-          coefffornorm=0.d0
-          do i=1,nstates
-            summe=0.d0
-            do k=1,nstates
-              summe=summe+projMatMultipole(i,k)*coeff(k)
-            enddo
-            coefffornorm(i)=summe
-          enddo
-          coeff=coefffornorm
-        endif
+C       This may not be necessary??
+C       Negative energy spectrum can be gently manipulated via potential
+C       To avoid degeneracies with 1_sigma
+!        if ((energy_lowest_bound .lt. -1.d0)
+!     &  .or. unfreeze_basis)then
+!          coefffornorm=0.d0
+!          do i=1,nstates
+!            summe=0.d0
+!            do k=1,nstates
+!              summe=summe+projMatMultipole(i,k)*coeff(k)
+!            enddo
+!            coefffornorm(i)=summe
+!          enddo
+!          dd=matmul(projMatMultipole,dd)
+!          coeff=coefffornorm
+!        endif
 CC******THE FINAL STEP!!!!!!!!!!!!!!!!
         coefffornorm=0.d0
         total_occupancy=0.d0
@@ -917,35 +955,47 @@ CC******THE FINAL STEP!!!!!!!!!!!!!!!!
           summe=0.d0
           do k=1,nstates
             summe=summe+dd(i,k)*coeff(k)
-            if (z_nuc1.ne.z_nuc2 .and. cdabs(summe)**2.gt.1.d0)then
-              summe = summe/cdabs(summe)
-              exit
-            endif
-            if (z_nuc1.eq.z_nuc2 .and. cdabs(summe)**2.gt.0.5d0)then
-              summe = summe/cdabs(summe)/dsqrt(2.d0)
-              exit
-            endif
+!            if (z_nuc1.ne.z_nuc2 .and. cdabs(summe)**2.gt.1.d0)then
+!              summe = summe/cdabs(summe)
+!              exit
+!            endif
+!            if (z_nuc1.eq.z_nuc2 .and. cdabs(summe)**2.gt.0.5d0)then
+!              summe = summe/cdabs(summe)/dsqrt(2.d0)
+!              exit
+!            endif
           enddo
           coefffornorm(i)=summe
           total_occupancy=total_occupancy+cdabs(summe)**2
-          if (total_occupancy.gt.start_occupancy+
-     &    occupancy_neg_cont_init)then
-            total_occupancy=start_occupancy+occupancy_neg_cont_init
-            exit
-          endif
+!          if (total_occupancy.gt.start_occupancy+
+!     &    occupancy_neg_cont_init)then
+!            total_occupancy=start_occupancy+occupancy_neg_cont_init
+!            exit
+!          endif
         enddo
+        if (total_occupancy.ne.start_occupancy+
+     &    occupancy_neg_cont_init)then
+          write(*,*) 'TOTAL OCCUPANCY', total_occupancy, 'START',
+     &    start_occupancy+occupancy_neg_cont_init
+          coefffornorm=coefffornorm*
+     &    dsqrt(start_occupancy+occupancy_neg_cont_init)/
+     &    dsqrt(total_occupancy)
+        endif
         coeff=coefffornorm
 C       Project back to the frozen basis
-        if (energy_lowest_bound .lt. -1.d0)then
-          coefffornorm=0.d0
-          do i=1,nstates
-            summe=0.d0
-            do k=1,nstates
-              summe=summe+projMatMultipole(i,k)*coeff(k)
-            enddo
-            coefffornorm(i)=summe
-          enddo
-          coeff=coefffornorm
+!        if (energy_lowest_bound .lt. -1.d0)then
+!          coefffornorm=0.d0
+!          do i=1,nstates
+!            summe=0.d0
+!            do k=1,nstates
+!              summe=summe+projMatMultipole(i,k)*coeff(k)
+!            enddo
+!            coefffornorm(i)=summe
+!          enddo
+!          coeff=coefffornorm
+!        endif
+        if (b_projMatMultipoleAllocated)then
+          deallocate(projMatMultipole)
+          b_projMatMultipoleAllocated = .false.
         endif
         if (b_projMatMultipoleAllocated)then
           deallocate(projMatMultipole)
@@ -1003,16 +1053,16 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
 
             if(ii_xi.gt.xi_stepslower)then
               write(50513+en_eval1,'(4f19.11)')(iii_xi/abs(iii_xi))*
-     &        2.d0*distance_startP/0.0025896063d0,
+     &        2.d0*distance_startP/alpha_bohr_inverse,
      &        dble(coeff(i)),aimag(coeff(i)),eigval_e(i)
               write(50513+en_eval1j,'(4f19.11)')(iii_xi/abs(iii_xi))*
-     &        2.d0*distance_startP/0.0025896063d0,
+     &        2.d0*distance_startP/alpha_bohr_inverse,
      &        dble(coeff(i+nste)),aimag(coeff(i+nste)),eigval_o(i)
               write(2256+en_eval1,'(3f19.11)')(iii_xi/abs(iii_xi))*
-     &        2.d0*distance_startP/0.0025896063d0,
+     &        2.d0*distance_startP/alpha_bohr_inverse,
      &        cdabs(coeff(i))**2,eigval_e(i)
               write(2256+en_eval1j,'(3f19.11)') (iii_xi/abs(iii_xi))*
-     &        2.d0*distance_startP/0.0025896063d0,
+     &        2.d0*distance_startP/alpha_bohr_inverse,
      &        cdabs(coeff(i+nste))**2,eigval_o(i)
             endif
             close(50513+en_eval1)
@@ -1048,10 +1098,10 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
 
             if(ii_xi.gt.xi_stepslower)then
               write(50513+i,'(4f19.11)') (iii_xi/abs(iii_xi))*2.d0*
-     &        distance_startP/0.0025896063d0,
+     &        distance_startP/alpha_bohr_inverse,
      &        dble(coeff(i)),aimag(coeff(i)),eigval(i)
               write(2256+i,'(3f19.11)') (iii_xi/abs(iii_xi))*2.d0*
-     &        distance_startP/0.0025896063d0,
+     &        distance_startP/alpha_bohr_inverse,
      &        cdabs(coeff(i))**2,eigval(i)
             endif
             close(50513+en_eval1)
@@ -1059,7 +1109,6 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
             deallocate(status_q)
           enddo
         endif
-
         if(ii_xi.eq.xi_stepslower)then
           open(127,file='Coeffs/Ionisation_Probability_charges_'
      &    //Charge_ofnuc_1//'_'//Charge_ofnuc_2//
@@ -1068,15 +1117,17 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
         endif
 
         Prob_ionisation=0.d0
-        Prob_electron_creation=0.d0
+        count_created_electrons=0.d0
         if(z_nuc1.ne.z_nuc2)then
           do i=1,nstates
             if(eigval(i).gt. 1.d0)then
               Prob_ionisation=Prob_ionisation+cdabs(coeff(i))**2
             endif
             if(eigval(i).lt.-1.d0)then
-              Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i))**2
+              if (i.ne.lowest_bound)then
+                count_created_electrons=count_created_electrons+
+     &          cdabs(coeff(i))**2
+              endif
             endif
           enddo
           deallocate(eigval)
@@ -1086,8 +1137,10 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
               Prob_ionisation=Prob_ionisation+cdabs(coeff(i))**2
             endif
             if(eigval_e(i).lt.-1.d0)then
-              Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i))**2
+              if (i.ne.lowest_bound_e)then
+                count_created_electrons=count_created_electrons+
+     &          cdabs(coeff(i))**2
+              endif
             endif
           enddo
           deallocate(eigval_e)
@@ -1097,29 +1150,29 @@ c*******END OF THE FINAL STEP!!!!!!!!!!!
      &        cdabs(coeff(i+nste))**2
             endif
             if(eigval_o(i).lt.-1.d0)then
-              Prob_electron_creation=Prob_electron_creation+
-     &        cdabs(coeff(i+nste))**2
+              if (i.ne.lowest_bound_o)then
+                count_created_electrons=count_created_electrons+
+     &          cdabs(coeff(i+nste))**2
+              endif
             endif
           enddo
           deallocate(eigval_o)
         endif
         Prob_ionisation=Prob_ionisation/start_occupancy
-        if (ii_xi .eq. xi_stepslower)then
-          occupancy_neg_cont_init = Prob_electron_creation
-        endif
-        Prob_electron_creation=occupancy_neg_cont_init-
-     &  Prob_electron_creation
-        Prob_electron_creation=Prob_electron_creation/
-     &  occupancy_neg_cont_init
+!        if (ii_xi .eq. xi_stepslower)then
+!          occupancy_neg_cont_init = count_created_electrons
+!        endif
+        count_created_electrons=max(occupancy_neg_cont_init-
+     &  count_created_electrons, 0.d0)
 
         if (ii_xi.ne. 0)then
           write(127,*)(ii_xi/abs(ii_xi))*
-     &    distance_endP/0.0025896063d0,Prob_ionisation,
-     &    Prob_electron_creation
+     &    distance_endP/alpha_bohr_inverse,Prob_ionisation,
+     &    count_created_electrons
         elseif(ii_xi.eq. 0)then
           write(127,*)
-     &    distance_endP/0.0025896063d0,Prob_ionisation,
-     &    Prob_electron_creation
+     &    distance_endP/alpha_bohr_inverse,Prob_ionisation,
+     &    count_created_electrons
         endif
 
         vectornorm_1=0.d0
@@ -1136,9 +1189,9 @@ c        coeff=coeff/dsqrt(vectornorm_1)
           iii_xi=ii_xi
         endif
 
-        write(*,*)'I-N DISTANCE',distance_endP/0.0025896063
+        write(*,*)'I-N DISTANCE',distance_endP/alpha_bohr_inverse
         write(*,*)'IONISATION PROBABILITY',Prob_ionisation
-        write(*,*)'E CREATION PROBABILITY',Prob_electron_creation
+        write(*,*)'E CREATION COUNT',count_created_electrons
 !      pause
         if(ii_xi.eq.xi_stepslower)then
           up_energy=up_energy*1.25d0
@@ -1148,1500 +1201,4 @@ c        coeff=coeff/dsqrt(vectornorm_1)
 
       enddo
       stop
-      end
-
-      subroutine draw_sigma(nm,nkap,nu,tknot,wave)
-      include 'inc.par'
-      real*8 ro(ns),ro1(ns),wave(2*nm,-nkap:nkap),tknot(nu)
-      common /momentum_projection/ amu,amj_max
-      real*8, dimension(:,:,:),allocatable:: plot
-
-      allocate(plot(5,16*(nu-2*ns+1),0:nugl))
-
-      plot=0.d0
-
-      do kk=-nkap,nkap
-        if(kk.ne.0)then
-          num=0
-          if(kk.gt.0)then
-            l1=kk
-            l2=kk-1
-          else
-            l1=-kk-1
-            l2=-kk
-          endif
-          al1=dble(l1)
-          al2=dble(l2)
-          aj=iabs(kk)-5.d-1
-
-          do is=nu-ns,ns,-1
-            do ip=8,1,-1
-              xx=tknot(is)+(tknot(is+1)-tknot(is))*dble(ip)/8.d0
-              call dsplines(xx,ro,ro1,is,tknot,nu)
-
-              g=0.d0
-              f=0.d0
-
-              if(is.eq.ns)then
-                do i=2,ns
-                  g=g+wave(i-1,kk)*ro(i)
-                  f=f+wave(nm+i-1,kk)*ro(i)
-                enddo
-              elseif(is.eq.nu-ns)then
-                do i=1,ns-1
-                  g=g+wave(i-1+is-ns,kk)*ro(i)
-                  f=f+wave(nm+i-1+is-ns,kk)*ro(i)
-                enddo
-              else
-                do i=1,ns
-                  g=g+wave(i-1+is-ns,kk)*ro(i)
-                  f=f+wave(nm+i-1+is-ns,kk)*ro(i)
-                enddo
-              endif
-              g=g/xx
-              f=f/xx
-              num=num+1
-              do j=0,nugl
-                ang=pi-j*pi/nugl
-                dc=dcos(ang)
-                ds=dsin(ang)
-                gfact1=clebsh(al1,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &          spharm(l1,idint(amu-5.d-1),dc)
-                gfact2=clebsh(al1,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &          spharm(l1,idint(amu+5.d-1),dc)
-                ffact1=clebsh(al2,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &          spharm(l2,idint(amu-5.d-1),dc)
-                ffact2=clebsh(al2,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &          spharm(l2,idint(amu+5.d-1),dc)
-
-                if((xx.ne.plot(1,num,j)).and.(kk.ne.-nkap))then
-                  write(*,*) 'something goes wrong with num'
-                  write(*,*) xx,plot(1,num,j)
-                  write(*,*) num,j
-                  write(*,*) 'Error in function draw_sigma'
-                endif
-
-                plot(1,num,j)=xx
-                plot(2,num,j)=plot(2,num,j)+g*gfact1
-                plot(3,num,j)=plot(3,num,j)+g*gfact2
-                plot(4,num,j)=plot(4,num,j)+f*ffact1
-                plot(5,num,j)=plot(5,num,j)+f*ffact2
-              enddo
-            enddo
-          enddo
-        endif
-      enddo
-
-      do i=1,num
-        write(1,1) -plot(1,i,0),(plot(k,i,0),k=2,5),
-     &  plot(2,i,0)**2+plot(3,i,0)**2+plot(4,i,0)**2+
-     &  plot(5,i,0)**2
-      enddo
-      do i=num,1,-1
-        write(1,1) plot(1,i,nugl),(plot(k,i,nugl),k=2,5),
-     &  plot(2,i,nugl)**2+plot(3,i,nugl)**2+plot(4,i,nugl)**2+
-     &  plot(5,i,nugl)**2
-      enddo
-      do i=1,num
-        r=plot(1,i,0)
-        do j=0,nugl
-          ang=pi-j*pi/nugl
-          dc=dcos(ang)
-          ds=dsin(ang)
-          x=r*dc
-          y=r*ds
-          if((dabs(x).lt.3.d0).and.(dabs(y).lt.3.d0))then
-            dens=plot(2,i,j)**2+plot(3,i,j)**2+plot(4,i,j)**2+
-     &      plot(5,i,j)**2
-            write(11,*) x,y,dens
-            write(12,*) x,y,dlog(dens)
-            if((j.ne.0).and.(j.ne.nugl))then
-              ang=pi+j*pi/nugl
-              dc=dcos(ang)
-              ds=dsin(ang)
-              x=r*dc
-              y=r*ds
-              write(11,*) x,y,dens
-              write(12,*) x,y,dlog(dens)
-            endif
-          endif
-        enddo
-      enddo
-
-      deallocate(plot)
- 1    format(e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6)
-      return
-      end
-
-      subroutine draw_sigma_raw(nm,nkap,nu,tknot,wave)
-      include 'inc.par'
-      real*8 ro(ns),ro1(ns),wave(2*nm,-nkap:nkap),tknot(nu)
-      common /momentum_projection/ amu,amj_max
-      real*8, dimension(:,:,:),allocatable:: plot
-
-      allocate(plot(5,16*(nu-2*ns+1),0:nugl))
-
-      plot=0.d0
-
-      do kk=-nkap,nkap
-        if(kk.ne.0)then
-          num=0
-          if(kk.gt.0)then
-            l1=kk
-            l2=kk-1
-          else
-            l1=-kk-1
-            l2=-kk
-          endif
-          al1=dble(l1)
-          al2=dble(l2)
-          aj=iabs(kk)-5.d-1
-          do is=nu-ns,ns,-1
-            do ip=8,1,-1
-              xx=tknot(is)+(tknot(is+1)-tknot(is))*dble(ip)/8.d0
-              call dsplines(xx,ro,ro1,is,tknot,nu)
-
-              g=0.d0
-              f=0.d0
-
-              if(is.eq.ns)then
-                do i=2,ns
-                  g=g+wave(i-1,kk)*ro(i)
-                  f=f+wave(nm+i-1,kk)*ro(i)
-                enddo
-              elseif(is.eq.nu-ns)then
-                do i=1,ns-1
-                  g=g+wave(i-1+is-ns,kk)*ro(i)
-                  f=f+wave(nm+i-1+is-ns,kk)*ro(i)
-                enddo
-              else
-                do i=1,ns
-                  g=g+wave(i-1+is-ns,kk)*ro(i)
-                  f=f+wave(nm+i-1+is-ns,kk)*ro(i)
-                enddo
-              endif
-              g=g/xx
-              f=f/xx
-              num=num+1
-              do j=0,nugl
-                ang=pi-j*pi/nugl
-                dc=dcos(ang)
-                ds=dsin(ang)
-                gfact1=clebsh(al1,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &          spharm(l1,idint(amu-5.d-1),dc)
-                gfact2=clebsh(al1,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &          spharm(l1,idint(amu+5.d-1),dc)
-                ffact1=clebsh(al2,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &          spharm(l2,idint(amu-5.d-1),dc)
-                ffact2=clebsh(al2,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &          spharm(l2,idint(amu+5.d-1),dc)
-
-                if((xx.ne.plot(1,num,j)).and.(kk.ne.-nkap))then
-                  write(*,*) 'something goes wrong with num'
-                  write(*,*) xx,plot(1,num,j)
-                  write(*,*) num,j
-                  write(*,*) 'Error in function draw_sigma_raw'
-                endif
-
-                plot(1,num,j)=xx
-                plot(2,num,j)=plot(2,num,j)+g*gfact1
-                plot(3,num,j)=plot(3,num,j)+g*gfact2
-                plot(4,num,j)=plot(4,num,j)+f*ffact1
-                plot(5,num,j)=plot(5,num,j)+f*ffact2
-              enddo
-            enddo
-          enddo
-        endif
-      enddo
-
-c      do i=1,num
-c         write(1,1) -plot(1,i,0),(plot(k,i,0),k=2,5),
-c     &        plot(2,i,0)**2+plot(3,i,0)**2+plot(4,i,0)**2+
-c     &        plot(5,i,0)**2
-c      enddo
-c      do i=num,1,-1
-c         write(1,1) plot(1,i,nugl),(plot(k,i,nugl),k=2,5),
-c     &        plot(2,i,nugl)**2+plot(3,i,nugl)**2+plot(4,i,nugl)**2+
-c     &        plot(5,i,nugl)**2
-c      enddo
-      do i=1,num
-        r=plot(1,i,0)
-        do j=0,nugl
-          ang=pi-j*pi/nugl
-          dc=dcos(ang)
-          ds=dsin(ang)
-          x=r*dc
-          y=r*ds
-          if((dabs(x).lt. 4.d0).and.(dabs(y).lt. 4.d0))then
-c               dens=plot(2,i,j)**2+plot(3,i,j)**2+plot(4,i,j)**2+
-c     &              plot(5,i,j)**2
-            write(511,11) x,y,plot(2,i,j),plot(3,i,j),plot(4,i,j),
-     &      plot(5,i,j)
-c               write(12,*) x,y,dlog(dens)
-            if((j.ne.0).and.(j.ne.nugl))then
-              ang=pi+j*pi/nugl
-              dc=dcos(ang)
-              ds=dsin(ang)
-              x=r*dc
-              y=r*ds
-              write(511,11) x,y,plot(2,i,j),plot(3,i,j),plot(4,i,j),
-     &        plot(5,i,j)
-              write(512,11) x,y,dlog(plot(2,i,j)),dlog(plot(3,i,j)),
-     &        dlog(plot(4,i,j)),dlog(plot(5,i,j))
-            endif
-          endif
-        enddo
-      enddo
-
-      deallocate(plot)
- 11   format(6(e12.5,1x))
-c 1    format(e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6)
-      return
-      end
-
-      subroutine draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      include 'inc.par'
-      real*8 ro(ns),ro1(ns),wave(2*nm,2*nm,-nkap:nkap),tknot(nu)
-      common /momentum_projection/ amu,amj_max
-
-      if(kk.gt.0)then
-        l1=kk
-        l2=kk-1
-      else
-        l1=-kk-1
-        l2=-kk
-      endif
-      al1=dble(l1)
-      al2=dble(l2)
-      aj=iabs(kk)-5.d-1
-
-      gfact1=clebsh(al1,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &spharm(l1,idint(amu-5.d-1),-1.d0)
-      gfact2=clebsh(al1,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &spharm(l1,idint(amu+5.d-1),-1.d0)
-      ffact1=clebsh(al2,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &spharm(l2,idint(amu-5.d-1),-1.d0)
-      ffact2=clebsh(al2,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &spharm(l2,idint(amu+5.d-1),-1.d0)
-      do is=nu-ns,ns,-1
-        do ip=ns,1,-1
-          xx=tknot(is)+(tknot(is+1)-tknot(is))*dble(ip)/dble(ns)
-          call dsplines(xx,ro,ro1,is,tknot,nu)
-
-          g=0.d0
-          f=0.d0
-
-          if(is.eq.ns)then
-            do i=2,ns
-              g=g+wave(i-1,jj,kk)*ro(i)
-              f=f+wave(nm+i-1,jj,kk)*ro(i)
-            enddo
-          elseif(is.eq.nu-ns)then
-            do i=1,ns-1
-              g=g+wave(i-1+is-ns,jj,kk)*ro(i)
-              f=f+wave(nm+i-1+is-ns,jj,kk)*ro(i)
-            enddo
-          else
-            do i=1,ns
-              g=g+wave(i-1+is-ns,jj,kk)*ro(i)
-              f=f+wave(nm+i-1+is-ns,jj,kk)*ro(i)
-            enddo
-          endif
-          g=g/xx
-          f=f/xx
-          write(1,1) -xx,g*gfact1,g*gfact2,f*ffact1,f*ffact2,
-     &    g**2*(gfact1**2+gfact2**2)+
-     &    f**2*(ffact1**2+ffact2**2)
-         enddo
-      enddo
-
-      gfact1=clebsh(al1,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &spharm(l1,idint(amu-5.d-1),1.d0)
-      gfact2=clebsh(al1,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &spharm(l1,idint(amu+5.d-1),1.d0)
-      ffact1=clebsh(al2,amu-5.d-1,5.d-1,5.d-1,aj,amu)*
-     &spharm(l2,idint(amu-5.d-1),1.d0)
-      ffact2=clebsh(al2,amu+5.d-1,5.d-1,-5.d-1,aj,amu)*
-     &spharm(l2,idint(amu+5.d-1),1.d0)
-      do is=ns,nu-ns
-        do ip=1,ns
-          xx=tknot(is)+(tknot(is+1)-tknot(is))*dble(ip)/dble(ns)
-          call dsplines(xx,ro,ro1,is,tknot,nu)
-
-          g=0.d0
-          f=0.d0
-
-          if(is.eq.ns)then
-            do i=2,ns
-              g=g+wave(i-1,jj,kk)*ro(i)
-              f=f+wave(nm+i-1,jj,kk)*ro(i)
-            enddo
-          elseif(is.eq.nu-ns)then
-            do i=1,ns-1
-              g=g+wave(i-1+is-ns,jj,kk)*ro(i)
-              f=f+wave(nm+i-1+is-ns,jj,kk)*ro(i)
-            enddo
-          else
-            do i=1,ns
-              g=g+wave(i-1+is-ns,jj,kk)*ro(i)
-              f=f+wave(nm+i-1+is-ns,jj,kk)*ro(i)
-            enddo
-          endif
-          g=g/xx
-          f=f/xx
-          write(1,1) xx,g*gfact1,g*gfact2,f*ffact1,f*ffact2,
-     &    g**2*(gfact1**2+gfact2**2)+
-     &    f**2*(ffact1**2+ffact2**2)
-        enddo
-      enddo
- 1    format(e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6,2x,e14.6)
-      return
-      end
-
-      subroutine r_diagonal_simple(nm,a,eignum,eigvect)
-      implicit real*8(a-h,o-z)
-      real*8 a(nm,nm),eigvect(nm,nm)
-      real*8 VL,VU,ABSTOL,eignum(nm)
-      integer, dimension(:),allocatable:: ISUPPZ,IWORK
-      character*1 JOBZ,RANGE,UPLO
-      real*8, dimension(:),allocatable:: WORK
-c$$$      real*8, dimension(:,:),allocatable:: atmp1,WORK(26*nm)
-c$$$
-c$$$      allocate(atmp1(nm,nm))
-c$$$      atmp1=a
-
-      allocate(ISUPPZ(2*nm))
-      LWORK=26*nm
-      allocate(WORK(LWORK))
-      LIWORK=10*nm
-      allocate(IWORK(LIWORK))
-      JOBZ='V'
-      RANGE='A'
-      UPLO='U'
-      VL=-1.d3
-      VU=1.d3
-      IL=1
-      IU=nm
-      ABSTOL=1.d-16
-
-      LWORK=-1
-      LIWORK=-1
-      call DSYEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   IWORK, LIWORK, INFO )
-
-      LWORK=idint(WORK(1))
-      LIWORK=IWORK(1)
-      deallocate(IWORK)
-      deallocate(WORK)
-      allocate(WORK(LWORK))
-      allocate(IWORK(LIWORK))
-
-      call DSYEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   IWORK, LIWORK, INFO )
-
-      deallocate(ISUPPZ)
-      deallocate(WORK)
-      deallocate(IWORK)
-cc      write(*,*) 'EXITING R_DIAG'
-      return
-      end
-
-
-      subroutine r_diagonal(choice,nm,a,eignum,eigvect)
-      implicit real*8(a-h,o-z)
-      real*8 a(nm,nm),eigvect(nm,nm)
-      real*8 VL,VU,ABSTOL,eignum(nm)
-      integer, dimension(:),allocatable:: ISUPPZ,IWORK
-      character*1 JOBZ,RANGE,UPLO
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      real*8, dimension(:),allocatable:: WORK
-      character choice
-c$$$      real*8, dimension(:,:),allocatable:: atmp1,WORK(26*nm)
-c$$$
-c$$$      allocate(atmp1(nm,nm))
-c$$$      atmp1=a
-
-      allocate(ISUPPZ(2*nm))
-      LWORK=26*nm
-      allocate(WORK(LWORK))
-      LIWORK=10*nm
-      allocate(IWORK(LIWORK))
-      JOBZ='V'
-      RANGE='A'
-      UPLO='U'
-      VL=-1.d3
-      VU=1.d3
-      IL=1
-      IU=nm
-      ABSTOL=1.d-16
-
-      LWORK=-1
-      LIWORK=-1
-      call DSYEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   IWORK, LIWORK, INFO )
-
-      LWORK=idint(WORK(1))
-      LIWORK=IWORK(1)
-      deallocate(IWORK)
-      deallocate(WORK)
-      allocate(WORK(LWORK))
-      allocate(IWORK(LIWORK))
-
-      call DSYEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   IWORK, LIWORK, INFO )
-
-c      write(*,*) M,'found vectors'
-
-cc      write(*,*) 'ground state energy is'
-      jj=1
-      do while (dabs(eignum(jj)).gt.1.d0)
-        jj=jj+1
-      enddo
-cc      write(*,*) eignum(jj)
-
-      select case(choice)
-      case('a')
-        open(1,file='energies.dat')
-      case('e')
-        open(1,file='energies_even.dat')
-      case('o')
-        open(1,file='energies_odd.dat')
-      end select
-      write(1,*) 'NUMERICAL  VALUE ',eignum(jj)
-      if((z_nuc1.ne.0.d0).and.(z_nuc2.eq.0.d0))then
-        write(1,*) 'ANALYTICAL VALUE ',dsqrt(1.d0-az1**2)
-        write(1,*) 'RELATIVE ACCURACY',
-     &  dabs((dsqrt(1.d0-az1**2)-eignum(jj))/eignum(jj))
-      elseif((z_nuc2.ne.0.d0).and.(z_nuc1.eq.0.d0))then
-        write(1,*) 'ANALYTICAL VALUE',dsqrt(1.d0-az2**2)
-        write(1,*) 'RELATIVE ACCURACY',
-     &  dabs((dsqrt(1.d0-az2**2)-eignum(jj))/eignum(jj))
-      endif
-
-      write(1,*) eignum
-      close(1)
-
-c$$$      write(*,*) 'Testing eigenvectors'
-c$$$      do i=1,nm
-c$$$         write(*,*) i,'-th vector'
-c$$$         do j=1,nm
-c$$$            sum=0.d0
-c$$$            do k=1,nm
-c$$$               sum=sum+atmp1(j,k)*eigvect(k,i)
-c$$$            enddo
-c$$$            write(*,*) sum,eignum(i)*eigvect(j,i),
-c$$$     &           dabs((sum-eignum(i)*eigvect(j,i))/sum)
-c$$$         enddo
-c$$$         pause
-c$$$      enddo
-
-      deallocate(ISUPPZ)
-      deallocate(WORK)
-      deallocate(IWORK)
-cc      write(*,*) 'EXITING R_DIAG'
-      return
-      end
-
-      subroutine c_diagonal_zheevx(nm,a,eignum,eigvect)
-      implicit complex*16(a-h,o-z)
-      complex*16 a(nm,nm),eigvect(nm,nm)
-      real*8 VL,VU,ABSTOL,eignum(nm),aa
-      integer INFO
-      integer, dimension(:),allocatable:: IWORK,IFAIL
-      character*1 JOBZ,RANGE,UPLO
-      complex*16, dimension(:),allocatable:: WORK
-      real*8, dimension(:),allocatable:: RWORK
-
-      LWORK=2*nm
-      allocate(WORK(LWORK))
-      LRWORK=7*nm
-      allocate(RWORK(LRWORK))
-      LIWORK=5*nm
-      allocate(IWORK(LIWORK))
-      allocate(IFAIL(nm))
-      JOBZ='V'
-      RANGE='A'
-      UPLO='U'
-      VL=-1.d3
-      VU=1.d3
-      IL=1
-      IU=nm
-      ABSTOL=1.d-16
-
-      LWORK=-1
-
-      call ZHEEVX( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm,
-     &                   WORK, LWORK,
-     &                   RWORK, IWORK, IFAIL, INFO )
-
-      aa=dble(WORK(1))
-      LWORK=idint(aa)
-      deallocate(WORK)
-      allocate(WORK(LWORK))
-c      write(*,*) M,'found vectors'
-      call ZHEEVX( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm,
-     &                   WORK, LWORK,
-     &                   RWORK, IWORK, IFAIL, INFO )
-
-      deallocate(WORK)
-      deallocate(RWORK)
-      deallocate(IWORK)
-      deallocate(IFAIL)
-
-      return
-      end
-
-      subroutine c_diagonal(nm,a,eignum,eigvect)
-      implicit complex*16(a-h,o-z)
-      complex*16 a(nm,nm),eigvect(nm,nm)
-      real*8 VL,VU,ABSTOL,eignum(nm),aa
-      integer, dimension(:),allocatable:: ISUPPZ,IWORK
-      character*1 JOBZ,RANGE,UPLO
-      complex*16, dimension(:),allocatable:: WORK
-      real*8, dimension(:),allocatable:: RWORK
-      integer LWORK
-
-      LWORK=2*nm
-      allocate(WORK(LWORK))
-      LRWORK=24*nm
-      allocate(RWORK(LRWORK))
-      allocate(ISUPPZ(2*nm))
-      LIWORK=10*nm
-      allocate(IWORK(LIWORK))
-      JOBZ='V'
-      RANGE='A'
-      UPLO='U'
-      VL=-1.d3
-      VU=1.d3
-      IL=1
-      IU=nm
-      ABSTOL=1.d-16
-
-      LWORK=-1
-      LRWORK=-1
-      LIWORK=-1
-
-      call ZHEEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   RWORK, LRWORK, IWORK, LIWORK, INFO )
-
-      aa=dble(WORK(1))
-      LWORK=idint(aa)
-      LRWORK=idint(RWORK(1))
-      LIWORK=IWORK(1)
-      deallocate(WORK)
-      deallocate(RWORK)
-      deallocate(IWORK)
-      allocate(WORK(LWORK))
-      allocate(RWORK(LRWORK))
-      allocate(IWORK(LIWORK))
-c      write(*,*) M,'found vectors'
-      call ZHEEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   RWORK, LRWORK, IWORK, LIWORK, INFO )
-
-      deallocate(WORK)
-      deallocate(RWORK)
-      deallocate(IWORK)
-      deallocate(ISUPPZ)
-
-      return
-      end
-
-      subroutine c_diagonal_lower(nm,a,eignum,eigvect)
-      implicit complex*16(a-h,o-z)
-      complex*16 a(nm,nm),eigvect(nm,nm)
-      real*8 VL,VU,ABSTOL,eignum(nm),aa
-      integer, dimension(:),allocatable:: ISUPPZ,IWORK
-      character*1 JOBZ,RANGE,UPLO
-      complex*16, dimension(:),allocatable:: WORK
-      real*8, dimension(:),allocatable:: RWORK
-
-      LWORK=2*nm
-      allocate(WORK(LWORK))
-      LRWORK=24*nm
-      allocate(RWORK(LRWORK))
-      allocate(ISUPPZ(2*nm))
-      LIWORK=10*nm
-      allocate(IWORK(LIWORK))
-      JOBZ='V'
-      RANGE='A'
-      UPLO='L'
-      VL=-1.d3
-      VU=1.d3
-      IL=1
-      IU=nm
-      ABSTOL=1.d-16
-
-      LWORK=-1
-      LRWORK=-1
-      LIWORK=-1
-
-      call ZHEEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   RWORK, LRWORK, IWORK, LIWORK, INFO )
-
-      aa=dble(WORK(1))
-      LWORK=idint(aa)
-      LRWORK=idint(RWORK(1))
-      LIWORK=IWORK(1)
-      deallocate(WORK)
-      deallocate(RWORK)
-      deallocate(IWORK)
-      allocate(WORK(LWORK))
-      allocate(RWORK(LRWORK))
-      allocate(IWORK(LIWORK))
-c      write(*,*) M,'found vectors'
-      call ZHEEVR( JOBZ, RANGE, UPLO, nm, A, nm, VL, VU, IL, IU,
-     &                   ABSTOL, M, eignum,eigvect, nm, ISUPPZ,
-     &                   WORK, LWORK,
-     &                   RWORK, LRWORK, IWORK, LIWORK, INFO )
-
-      deallocate(WORK)
-      deallocate(RWORK)
-      deallocate(IWORK)
-      deallocate(ISUPPZ)
-
-      return
-      end
-
-      subroutine plot_functions(nstates,nm,nkap,num_st,nu,
-     &wave,e,tknot,eigval,eigvec)
-      include 'inc.par'
-      real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
-     &eigval(nstates),eigvec(nstates,nstates)
-      integer num_st(-nkap:nkap,2*nm),dist_as_integer
-      common /momentum_projection/ amu,amj_max
-      common /r_nuc/ r01,r02
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /nuc_mod/ nuc_model
-      real*8, dimension(:,:),allocatable:: wcf
-      character*5 dist_string
-      allocate (wcf(2*nm,-nkap:nkap))
-      wcf=0.d0
-
-      dist_as_integer=int(2.d0*distance/0.0025896063d0)
-      write(dist_string,173)dist_as_integer
-  173 format(I5.5)
-
-      kk=-1
-      open(1,file='plot_rad_ground_'//dist_string//'.dat')
-      jj=1
-      do while(e(jj,kk).lt.-1.d0)
-        jj=jj+1
-      enddo
-
-      write(1,*) '# energy',e(jj,kk),'number',jj
-
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-
-      close(1)
-
-      open(1,file='plot_rad_2s_'//dist_string//'.dat')
-      jj=jj+1
-      write(1,*) '# energy',e(jj,kk),'number',jj
-
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-      kk=1
-      open(1,file='plot_rad_2p1ground_'//dist_string//'.dat')
-      jj=1
-      do while(e(jj,kk).lt.-1.d0)
-        jj=jj+1
-      enddo
-      write(1,*) '# energy',e(jj,kk),'number',jj
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-      open(1,file='plot_rad_2p1_'//dist_string//'.dat')
-      jj=jj+1
-      write(1,*) '# energy',e(jj,kk),'number',jj
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-      kk=-2
-      open(1,file='plot_rad_2p3ground_'//dist_string//'.dat')
-      jj=1
-      do while(e(jj,kk).lt.-1.d0)
-        jj=jj+1
-      enddo
-      write(1,*) '# energy',e(jj,kk),'number',jj
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-      open(11,file='dens_1sigma_'//dist_string//'.dat')
-      open(12,file='dens_log_1sigma_'//dist_string//'.dat')
-      open(511,file='dens_1sigma_'//dist_string//'_raw.dat')
-      open(512,file='dens_log_1sigma_'//dist_string//'_raw.dat')
-      open(1,file='plot_1sigma_'//dist_string//'.dat')
-      open(2,file='states_1sigma_'//dist_string//'.dat')
-      write(2,*) '#coe, N,kap,ene'
-
-      jj=1
-      do while(eigval(jj).lt.-1.d0)
-        jj=jj+1
-      enddo
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='states_1sigma_'//dist_string//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_2sigma_'//dist_string//'.dat')
-      open(12,file='dens_log_2sigma_'//dist_string//'.dat')
-      open(511,file='dens_2sigma_'//dist_string//'_raw.dat')
-      open(512,file='dens_log_2sigma_'//dist_string//'_raw.dat')
-      open(2,file='wave_2sigma_'//dist_string//'.dat')
-      write(2,*) '#coe, N,kap,parity,ene'
-      open(1,file='plot_2sigma_'//dist_string//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_2sigma_'//dist_string//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_3sigma_'//dist_string//'.dat')
-      open(12,file='dens_log_3sigma_'//dist_string//'.dat')
-      open(511,file='dens_3sigma_'//dist_string//'_raw.dat')
-      open(512,file='dens_log_3sigma_'//dist_string//'_raw.dat')
-      open(2,file='states_3sigma_'//dist_string//'.dat')
-      write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_3sigma_'//dist_string//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_3sigma_'//dist_string//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_4sigma_'//dist_string//'.dat')
-      open(12,file='dens_log_4sigma_'//dist_string//'.dat')
-      open(511,file='dens_4sigma_'//dist_string//'_raw.dat')
-      open(512,file='dens_log_4sigma_'//dist_string//'_raw.dat')
-      open(2,file='states_4sigma_'//dist_string//'.dat')
-      write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_4sigma_'//dist_string//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_4sigma_'//dist_string//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-      close(1)
-      close(2)
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      deallocate(wcf)
-      return
-      end
-
-      subroutine write_output(ns_in,nstates,nm,nkap,num_st,nu,
-     &wave,e,tknot,eigval,eigvec)
-      include 'inc.par'
-      real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
-     &eigval(nstates),eigvec(nstates,nstates)
-      integer num_st(-nkap:nkap,2*nm)
-      common /momentum_projection/ amu,amj_max
-      common /r_nuc/ r01,r02
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /nuc_mod/ nuc_model
-
-      open(1,file='wave_functions_monopol.out',form='unformatted')
-      write(1) wave
-      close(1)
-      open(1,file='wave_functions_CI.out',form='unformatted')
-      write(1) eigvec
-      close(1)
-      open(1,file='energies_monopol.out',form='unformatted')
-      write(1) e
-      close(1)
-      open(1,file='B_spline_knots.out',form='unformatted')
-      write(1) tknot
-      close(1)
-      open(1,file='energies_CI.out',form='unformatted')
-      write(1) eigval
-      close(1)
-      open(1,file='numbers_monopol.out',form='unformatted')
-      write(1) num_st
-      close(1)
-
-      open(1,file='parameters.out')
-      write(1,*) ns_in,nstates,nm,nkap,nu,amu,r01,r02,distance,
-     &z_nuc1,az1,z_nuc2,az2,nuc_model
-      close(1)
-      return
-      end
-
-      subroutine plot_functions_even(nstates,nm,nkap,num_st,nu,
-     &wave,e,tknot,eigval,eigvec)
-      include 'inc.par'
-      real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
-     &eigval(nstates),eigvec(nstates,nstates)
-      integer num_st(-nkap:nkap,2*nm),dist_as_integer
-      common /momentum_projection/ amu,amj_max
-      common /r_nuc/ r01,r02
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /nuc_mod/ nuc_model
-      real*8, dimension(:,:),allocatable:: wcf
-      character*5 dist
-      allocate (wcf(2*nm,-nkap:nkap))
-      wcf=0.d0
-
-      dist_as_integer=int(2.d0*distance/0.0025896063d0)
-      write(dist,173)dist_as_integer
-  173 format(I5.5)
-
-      kk=-1
-      open(1,file='plot_rad_ground_'//dist//'.dat')
-      jj=1
-      do while(e(jj,kk).lt.-1.d0)
-        jj=jj+1
-      enddo
-
-      write(1,*) '# energy',e(jj,kk),'number',jj
-
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-
-      close(1)
-
-      open(1,file='plot_rad_2s_'//dist//'.dat')
-      jj=jj+1
-      write(1,*) '# energy',e(jj,kk),'number',jj
-
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-      kk=1
-      open(1,file='plot_rad_2p1ground_'//dist//'.dat')
-      jj=1
-      do while(e(jj,kk).lt.-1.d0)
-        jj=jj+1
-      enddo
-      write(1,*) '# energy',e(jj,kk),'number',jj
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-      open(1,file='plot_rad_2p1_'//dist//'.dat')
-      jj=jj+1
-      write(1,*) '# energy',e(jj,kk),'number',jj
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-      kk=-2
-      open(1,file='plot_rad_2p3ground_'//dist//'.dat')
-      jj=1
-      do while(e(jj,kk).lt.-1.d0)
-        jj=jj+1
-      enddo
-      write(1,*) '# energy',e(jj,kk),'number',jj
-      call draw_radial(nm,nkap,nu,tknot,wave,jj,kk)
-      close(1)
-
-
-      open(1,file='plot_1sigma_g_'//dist//'.dat')
-      open(2,file='states_1sigma_g_'//dist//'.dat')
-      write(2,*) '#coe, N,kap,ene'
-
-      jj=1
-      do while(eigval(jj).lt.-1.d0)
-        jj=jj+1
-      enddo
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(11,file='dens_1sigma_g_'//dist//'.dat')
-      open(12,file='dens_log_1sigma_g_'//dist//'.dat')
-      open(511,file='dens_1sigma_g_'//dist//'_raw.dat')
-      open(512,file='dens_log_1sigma_g_'//dist//'_raw.dat')
-      open(3,file='states_1sigma_g_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_2sigma_g_'//dist//'.dat')
-      open(12,file='dens_log_2sigma_g_'//dist//'.dat')
-      open(511,file='dens_2sigma_g_'//dist//'_raw.dat')
-      open(512,file='dens_log_2sigma_g_'//dist//'_raw.dat')
-      open(2,file='wave_2sigma_g_'//dist//'.dat')
-      write(2,*) '#coe, N,kap,parity,ene'
-      open(1,file='plot_2sigma_g_'//dist//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_2sigma_g_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-
-      close(2)
-
-      close(511)
-      close(512)
-      close(11)
-      close(12)
-      open(11,file='dens_3sigma_g_'//dist//'.dat')
-      open(511,file='dens_3sigma_g_'//dist//'_raw.dat')
-      open(2,file='states_3sigma_g_'//dist//'.dat')
-      open(12,file='dens_log_3sigma_g_'//dist//'.dat')
-      open(512,file='dens_log_3sigma_g_'//dist//'_raw.dat')
-      write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_3sigma_g_'//dist//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_3sigma_g_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_4sigma_g_'//dist//'.dat')
-      open(511,file='dens_4sigma_g_'//dist//'_raw.dat')
-      open(2,file='states_4sigma_g_'//dist//'.dat')
-      open(12,file='dens_log_4sigma_g_'//dist//'.dat')
-      open(512,file='dens_log_4sigma_g_'//dist//'_raw.dat')
-      write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_4sigma_g_'//dist//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_4sigma_g_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-      close(1)
-      close(2)
-      close(511)
-      close(512)
-      close(11)
-      close(12)
-      deallocate(wcf)
-      return
-      end
-
-      subroutine write_output_even(ns_in,nstates,nm,nkap,num_st,nu,
-     &wave,e,tknot,eigval,eigvec)
-     include 'inc.par'
-      real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
-     &eigval(nstates),eigvec(nstates,nstates)
-      integer num_st(-nkap:nkap,2*nm)
-      common /momentum_projection/ amu,amj_max
-      common /r_nuc/ r01,r02
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /nuc_mod/ nuc_model
-
-      open(1,file='wave_functions_monopol.out',form='unformatted')
-      write(1) wave
-      close(1)
-      open(1,file='wave_functions_CI_g.out',form='unformatted')
-      write(1) eigvec
-      close(1)
-      open(1,file='energies_monopol.out',form='unformatted')
-      write(1) e
-      close(1)
-      open(1,file='B_spline_knots.out',form='unformatted')
-      write(1) tknot
-      close(1)
-      open(1,file='energies_CI_g.out',form='unformatted')
-      write(1) eigval
-      close(1)
-      open(1,file='numbers_monopol_g.out',form='unformatted')
-      write(1) num_st
-      close(1)
-
-      open(1,file='parameters.out')
-      write(1,*) ns_in,nstates,nm,nkap,nu,amu,r01,r02,distance,
-     &z_nuc1,az1,z_nuc2,az2,nuc_model
-      close(1)
-      return
-      end
-
-      subroutine plot_functions_odd(nstates,nm,nkap,num_st,nu,
-     &wave,e,tknot,eigval,eigvec)
-      include 'inc.par'
-      real*8 wave(2*nm,2*nm,-nkap:nkap),e(2*nm,-nkap:nkap),tknot(nu),
-     &eigval(nstates),eigvec(nstates,nstates)
-      integer num_st(-nkap:nkap,2*nm),dist_as_integer
-      common /momentum_projection/ amu,amj_max
-      common /r_nuc/ r01,r02
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /nuc_mod/ nuc_model
-      real*8, dimension(:,:),allocatable:: wcf
-      character*5 dist
-      allocate (wcf(2*nm,-nkap:nkap))
-      wcf=0.d0
-
-      dist_as_integer=int(2.d0*distance/0.0025896063d0)
-      write(dist,173)dist_as_integer
-  173 format(I5.5)
-
-      open(1,file='plot_1sigma_u_'//dist//'.dat')
-      open(2,file='states_1sigma_u_'//dist//'.dat')
-      write(2,*) '#coe, N,kap,ene'
-
-      jj=1
-      do while(eigval(jj).lt.-1.d0)
-        jj=jj+1
-      enddo
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(11,file='dens_1sigma_u_'//dist//'.dat')
-      open(12,file='dens_log_1sigma_u_'//dist//'.dat')
-      open(511,file='dens_1sigma_u_'//dist//'_raw.dat')
-      open(512,file='dens_log_1sigma_u_'//dist//'_raw.dat')
-      open(3,file='states_1sigma_u_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_2sigma_u_'//dist//'.dat')
-      open(12,file='dens_log_2sigma_u_'//dist//'.dat')
-      open(511,file='dens_2sigma_u_'//dist//'_raw.dat')
-      open(512,file='dens_log_2sigma_u_'//dist//'_raw.dat')
-      open(2,file='wave_2sigma_u_'//dist//'.dat')
-      write(2,*) '#coe, N,kap,parity,ene'
-      open(1,file='plot_2sigma_u_'//dist//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_2sigma_u_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_3sigma_u_'//dist//'.dat')
-      open(12,file='dens_log_3sigma_u_'//dist//'.dat')
-      open(511,file='dens_3sigma_u_'//dist//'_raw.dat')
-      open(512,file='dens_log_3sigma_u_'//dist//'_raw.dat')
-      open(2,file='states_3sigma_u_'//dist//'.dat')
-      write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_3sigma_u_'//dist//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_3sigma_u_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-
-      close(1)
-
-      close(2)
-
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      open(11,file='dens_4sigma_u_'//dist//'.dat')
-      open(12,file='dens_log_4sigma_u_'//dist//'.dat')
-      open(511,file='dens_4sigma_u_'//dist//'_raw.dat')
-      open(512,file='dens_log_4sigma_u_'//dist//'_raw.dat')
-      open(2,file='states_4sigma_u_'//dist//'.dat')
-      write(2,*) '#coe, N,kap,ene'
-      open(1,file='plot_4sigma_u_'//dist//'.dat')
-      jj=jj+1
-
-      write(1,*) '# energy',eigval(jj),'number',jj
-
-      do i=1,2*nm
-        do j=-nkap,nkap
-          if(num_st(j,i).ne.0.d0)then
-            n=num_st(j,i)
-            do l=1,2*nm
-              wcf(l,j)=wcf(l,j)+eigvec(n,jj)*wave(l,i,j)
-            enddo
-            if(dabs(eigvec(n,jj)).gt.1.d-12)then
-              if(((j.gt.0).and.((j/2)*2.ne.j)).or.
-     &        ((j.lt.0).and.((j/2)*2.eq.j)))then
-                write(2,*) eigvec(n,jj),i,j,'odd ',e(i,j)
-              else
-                write(2,*) eigvec(n,jj),i,j,'even',e(i,j)
-              endif
-            endif
-          endif
-        enddo
-      enddo
-
-      open(3,file='wave_4sigma_u_'//dist//'.dat')
-      write(3,*) nm,nkap,nu,tknot,wcf,eigval(jj)
-      close(3)
-      call draw_sigma(nm,nkap,nu,tknot,wcf)
-      call draw_sigma_raw(nm,nkap,nu,tknot,wcf)
-      wcf=0.d0
-      close(1)
-      close(2)
-      close(11)
-      close(12)
-      close(511)
-      close(512)
-      deallocate(wcf)
-      return
-      end
-
-      subroutine write_output_odd(nstates,nm,nkap,num_st,
-     &eigval,eigvec)
-     include 'inc.par'
-      real*8 eigval(nstates),eigvec(nstates,nstates)
-      integer num_st(-nkap:nkap,2*nm)
-      common /momentum_projection/ amu,amj_max
-      common /r_nuc/ r01,r02
-      common /dist/distance,Starting_Distance
-      common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
-      common /nuc_mod/ nuc_model
-
-      open(1,file='wave_functions_CI_u.out',form='unformatted')
-      write(1) eigvec
-      close(1)
-      open(1,file='energies_CI_u.out',form='unformatted')
-      write(1) eigval
-      close(1)
-      open(1,file='numbers_monopol_u.out',form='unformatted')
-      write(1) num_st
-      close(1)
-
-      return
-      end
-
-c Added in order to get the states better defined 110810.
-
-      function State_orgnzr(i,kk,max_kappa)
-      integer State_orgnzr,i,kk,max_kappa
-      if (kk .ne. 0) then
-        State_orgnzr=Invtd_Kppa_arry(kk)+
-     &  Invtd_Kppa_arry(max_kappa)*(i-1)
-      endif
-      return
-      end
-
-      function Invtd_Kppa_arry(kk)
-      integer Invtd_Kppa_arry,kk
-      if (kk .ne. 0) then
-        if (kk .gt. 0) then
-          Invtd_Kppa_arry=2*kk
-        elseif (kk .lt. 0) then
-          Invtd_Kppa_arry=2*abs(kk)-1
-        endif
-      endif
-      return
       end

@@ -26,3 +26,6 @@ c      1/fine stucture constant
 
        parameter(pe_massratio=1836.15267245d0)
 c      proton electron mass ratio
+
+       parameter(alpha_bohr_inverse=0.0025896051d0)
+c      unit length conversion, used in printing.

@@ -154,7 +154,6 @@ c      if(l.eq.0) pause
       subroutine v_nucl(n,y,x,v1,v2,v0)
       include 'inc.par'
       common /r_nuc/ r01,r02
-      common /aferm/summa1,summa2
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /dist/distance,Starting_Distance
       external r_ferma,r_ferm1a,r_fermb,r_ferm1b
@@ -164,19 +163,6 @@ c      if(l.eq.0) pause
       v1=0.d0
       v2=0.d0
       if((n.eq.1).and.(z_nuc1.ne.0.d0))then
-        if((summa1.eq.0.d0).and.((Nuc_model.eq.3)
-     &  .or.(Nuc_model.eq.4))) then
-          t1a=0.d0
-          t2a=r01
-          re=rint(r_ferm1a,t1a,t2a,32)
-          summa1=re
-          do while(dabs(re/summa1).gt.1.d-16)
-            t1a=t2a
-            t2a=t2a*1.5d0
-            re=rint(r_ferm1a,t1a,t2a,32)
-            summa1=summa1+re
-          enddo
-        endif
         y1=dsqrt(y**2+distance**2-2.d0*y*distance*x)
         v0=-az1/y1
         select case(Nuc_model)
@@ -219,25 +205,21 @@ c      if(l.eq.0) pause
               t0=t1
               t1=t1*1.9d0
             enddo
+            t1a=0.d0
+            t2a=r01
+            re=rint(r_ferm1a,t1a,t2a,32)
+            summa1=re
+            do while(dabs(re/summa1).gt.1.d-16)
+              t1a=t2a
+              t2a=t2a*1.5d0
+              re=rint(r_ferm1a,t1a,t2a,32)
+              summa1=summa1+re
+            enddo
             v1=-az1*v1/y1/summa1
         end select
         v1=v1-v0
       elseif(z_nuc2.ne.0.d0)then
-        if((summa2.eq.0.d0).and.((Nuc_model.eq.3)
-     &  .or.(Nuc_model.eq.4))) then
-          t1a=0.d0
-          t2a=r01
-          re=rint(r_ferm1b,t1a,t2a,32)
-          summa2=re
-          do while(dabs(re/summa2).gt.1.d-16)
-            t1a=t2a
-            t2a=t2a*1.5d0
-            re=rint(r_ferm1b,t1a,t2a,32)
-            summa2=summa2+re
-          enddo
-        endif
         y2=dsqrt(y**2+distance**2+2.d0*y*distance*x)
-
         v0=-az2/y2
         select case(Nuc_model)
           case(0)
@@ -279,6 +261,16 @@ c      if(l.eq.0) pause
               t0=t1
               t1=t1*1.9d0
             enddo
+            t1a=0.d0
+            t2a=r01
+            re=rint(r_ferm1b,t1a,t2a,32)
+            summa2=re
+            do while(dabs(re/summa2).gt.1.d-16)
+              t1a=t2a
+              t2a=t2a*1.5d0
+              re=rint(r_ferm1b,t1a,t2a,32)
+              summa2=summa2+re
+            enddo
             v2=-az2*v2/y2/summa2
         end select
         v2=v2-v0
@@ -288,26 +280,26 @@ c      if(l.eq.0) pause
 
       real*8 function r_ferma(x)
       implicit real*8(a-h,o-z)
-      common /ferm/ c1,z1,c2,z2
+      common /ferm/ cf1,af1,cf2,af2
 
       x1=x/(25.896063451984380d-4)
-      if(((x1-c1)/z1).gt.500) then
-        r_ferma=dexp(-(x1-c1)/z1)*x
+      if(((x1-cf1)/af1).gt.500) then
+        r_ferma=dexp(-(x1-cf1)/af1)*x
       else
-        r_ferma=1.d0/(1.d0+dexp((x1-c1)/z1))*x
+        r_ferma=1.d0/(1.d0+dexp((x1-cf1)/af1))*x
       endif
       return
       end
 
       real*8 function r_ferm1a(x)
       implicit real*8(a-h,o-z)
-      common /ferm/ c1,z1,c2,z2
+      common /ferm/ cf1,af1,cf2,af2
 
       x1=x/(25.896063451984380d-4)
-      if(((x1-c1)/z1).gt.500) then
-        r_ferm1a=dexp(-(x1-c1)/z1)*x*x
+      if(((x1-cf1)/af1).gt.500) then
+        r_ferm1a=dexp(-(x1-cf1)/af1)*x*x
       else
-        r_ferm1a=1.d0/(1.d0+dexp((x1-c1)/z1))*x*x
+        r_ferm1a=1.d0/(1.d0+dexp((x1-cf1)/af1))*x*x
       endif
       return
       end
@@ -315,26 +307,26 @@ c      if(l.eq.0) pause
 
       real*8 function r_fermb(x)
       implicit real*8(a-h,o-z)
-      common /ferm/ c1,z1,c2,z2
+      common /ferm/ cf1,af1,cf2,af2
 
       x1=x/(25.896063451984380d-4)
-      if(((x1-c2)/z2).gt.500) then
-        r_fermb=dexp(-(x1-c2)/z2)*x
+      if(((x1-cf2)/af2).gt.500) then
+        r_fermb=dexp(-(x1-cf2)/af2)*x
       else
-        r_fermb=1.d0/(1.d0+dexp((x1-c2)/z2))*x
+        r_fermb=1.d0/(1.d0+dexp((x1-cf2)/af2))*x
       endif
       return
       end
 
       real*8 function r_ferm1b(x)
       implicit real*8(a-h,o-z)
-      common /ferm/ c1,z1,c2,z2
+      common /ferm/ cf1,af1,cf2,af2
 
       x1=x/(25.896063451984380d-4)
-      if(((x1-c2)/z2).gt.500) then
-        r_ferm1b=dexp(-(x1-c2)/z2)*x*x
+      if(((x1-cf2)/af2).gt.500) then
+        r_ferm1b=dexp(-(x1-cf2)/af2)*x*x
       else
-        r_ferm1b=1.d0/(1.d0+dexp((x1-c2)/z2))*x*x
+        r_ferm1b=1.d0/(1.d0+dexp((x1-cf2)/af2))*x*x
       endif
       return
       end
@@ -1430,7 +1422,7 @@ c      enddo
       external potl1,potl2
       common /nuc_charge/ z_nuc1,az1,z_nuc2,az2
       common /TargProj_prop/ Proj_mass,Targ_mass,Proj_vel,
-     & b_ImpactParam
+     &b_ImpactParam
       real*8 u(0:2*nkap),dist
       common /weights/ w4(4),t4(4),w8(8),t8(8),w16(16),t16(16),w32(32),
      &t32(32),w64(64),t64(64),t6(6),w6(6)
